@@ -11,7 +11,7 @@ include/
 bin/   
 
 # Data Files
-data.json
+pricelist.json
 
 # Distribution / packaging
 .Python
