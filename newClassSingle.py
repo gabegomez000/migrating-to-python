@@ -5,6 +5,9 @@ import pytz
 from prompt_toolkit import prompt
 import os
 import base64
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def push_classes():
@@ -15,10 +18,8 @@ def push_classes():
 
     date_start = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 
-    print(date_start)
-
-    api_url = os.environ['API_URL']
-    api_key = os.environ['API_KEY']
+    api_url = os.getenv('API_URL')
+    api_key = os.getenv('API_KEY')
 
     form_data = {
         'Key': api_key,
@@ -35,7 +36,6 @@ def push_classes():
     response = requests.post(api_url, data=form_data)
     body = json.loads(response.text)
     data = body['Data']
-    print(data)
 
     start = datetime.strptime(data['cobalt_ClassBeginDate']['Display'], '%Y-%m-%dT%H:%M:%S')
     end = datetime.strptime(data['cobalt_ClassEndDate']['Display'], '%Y-%m-%dT%H:%M:%S')
@@ -60,8 +60,6 @@ def push_classes():
 
     if len(order_ids) > 0:
         cost = next((price['Price'] for price in prices if price['ProductId'] == order_ids[0]['id']), None)
-        print(data['cobalt_classid'])
-        print(cost)
         data['cobalt_price'] = cost or '0.0000'
     else:
         data['cobalt_price'] = '0.0000'
@@ -75,13 +73,13 @@ def push_classes():
 
     # Console.log(data.cobalt_price)
     # Console.log(`-------`)
-    print(data['cobalt_price'])
 
     # Remove the last two characters from data.cobalt_price
     data['cobalt_price'] = data['cobalt_price'][:-2]
 
-    # Create a list of tags
-    tags = [data['cobalt_name'] for data in data['cobalt_cobalt_tag_cobalt_class']]
+    # Assuming data is your main dictionary
+    tags_string = data['cobalt_cobalt_tag_cobalt_class']
+    tags_list = tags_string.split(', ')
 
     # Set data.statuscode to data.statuscode.Display
     data['statuscode'] = data['statuscode']['Display']
@@ -141,13 +139,9 @@ def push_classes():
 
     data['cobalt_name'] = data['cobalt_name']
 
-    data['cobalt_cobalt_tag_cobalt_class'] = tags
-
     with open('logs/apiData.json', 'a') as file:
         current_time = datetime.now().strftime('%I:%M:%S %p')
         file.write(f"[{current_time}] {json.dumps(data)} \n")
-
-    data = form_data    # print(data)
 
     existingClasses = []
     newClasses = []
@@ -161,10 +155,7 @@ def push_classes():
     with open('logs/logs.txt', 'a') as f:
         f.write(f"Found {len(newClasses)} new classes. Discarding {len(existingClasses)} existing classes.\n")
 
-    newClasses = []
-
-    newClasses.append(data)
-
+    newClasses = [data]
 
     def submitNewClass(data):
         ramcoClass = {
@@ -199,7 +190,7 @@ def push_classes():
         with open('logs/logs.txt', 'a') as f:
             f.write(f"[{datetime.now().strftime('%I:%M:%S %p')}] Class processed: {data['cobalt_name']}\n")
 
-    submitNewClass(data)
+    submitNewClass(data.copy())
 
 
 if __name__ == '__main__':
