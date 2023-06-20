@@ -6,6 +6,7 @@ from prompt_toolkit import prompt
 import os
 import base64
 from dotenv import load_dotenv
+import time
 
 load_dotenv()
 
@@ -126,8 +127,8 @@ def push_classes():
 
     # Console.log(data.cobalt_LocationId.Display)
     # Console.log(data.cobalt_LocationId.Value)
-    print(data['cobalt_LocationId']['Display'])
-    print(data['cobalt_LocationId']['Value'])
+    # print(data['cobalt_LocationId']['Display'])
+    # print(data['cobalt_LocationId']['Value'])
 
     if len(data['cobalt_cobalt_classinstructor_cobalt_class']) > 0:
         classInstructor = [item['cobalt_name'] for item in data['cobalt_cobalt_classinstructor_cobalt_class']]
@@ -143,52 +144,51 @@ def push_classes():
         current_time = datetime.now().strftime('%I:%M:%S %p')
         file.write(f"[{current_time}] {json.dumps(data)} \n")
 
-    existingClasses = []
-    newClasses = []
-
-    with open('logs/logs.txt', 'a') as f:
-        f.write(
-            f"[{datetime.now().strftime('%I:%M:%S %p')}] Total classes found: {len(data)} with {len(newClasses)} new classes and {len(existingClasses)} existing classes\n")
-
-    print(f"Found {len(newClasses)} new classes. Discarding {len(existingClasses)} existing classes.")
-
-    with open('logs/logs.txt', 'a') as f:
-        f.write(f"Found {len(newClasses)} new classes. Discarding {len(existingClasses)} existing classes.\n")
-
-    newClasses = [data]
-
     def submitNewClass(data):
-        ramcoClass = {
-            "title": data['cobalt_name'],
-            "status": "publish",
-            "hide_from_listings": data['publish'],
-            "description": data['cobalt_Description'],
-            "all_day": data['all_day'],
-            "start_date": data['cobalt_ClassBeginDate']['Display'],
-            "end_date": data['cobalt_ClassEndDate']['Display'],
-            "slug": data['cobalt_classId'],
-            "categories": data['cobalt_cobalt_tag_cobalt_class'],
-            "show_map_link": True,
-            "show_map": True,
-            "cost": data['cobalt_price'],
-            "tags": data['cobalt_cobalt_tag_cobalt_class'],
-            "venue": {
-                "id": data['locationId']
+        # Check if the event already exists in the WordPress database
+        response = requests.get(f"{os.getenv('WPEVENT_URL')}/{data['cobalt_classId']}",
+                                headers={
+                                    'Authorization': 'Basic ' + base64.b64encode(
+                                        os.getenv('WORDPRESS_CREDS').encode('utf-8')).decode('utf-8')
+                                })
+        if response.status_code == 200:
+            # Event already exists, do not submit
+            print(f"Event with class ID {data['cobalt_classId']} already exists in the WordPress database.")
+            with open('logs/logs.txt', 'a') as f:
+                f.write(
+                    f"[{datetime.now().strftime('%I:%M:%S %p')}] Event with class ID {data['cobalt_classId']}"
+                    f"already exists in the WordPress database.\n")
+        else:
+            ramcoClass = {
+                "title": data['cobalt_name'],
+                "status": "publish",
+                "hide_from_listings": data['publish'],
+                "description": data['cobalt_Description'],
+                "all_day": data['all_day'],
+                "start_date": data['cobalt_ClassBeginDate']['Display'],
+                "end_date": data['cobalt_ClassEndDate']['Display'],
+                "slug": data['cobalt_classId'],
+                "categories": data['cobalt_cobalt_tag_cobalt_class'],
+                "show_map_link": True,
+                "show_map": True,
+                "cost": data['cobalt_price'],
+                "tags": data['cobalt_cobalt_tag_cobalt_class'],
+                "venue": {
+                    "id": data['locationId']
+                }
             }
-        }
+            response = requests.post(os.environ['WORDPRESS_URL'], headers={
+                'Content-Type': 'application/json',
+                'Authorization': 'Basic ' + base64.b64encode(os.environ['WORDPRESS_CREDS'].encode('utf-8')).decode('utf-8')
+            }, json=ramcoClass)
 
-        response = requests.post(os.environ['WORDPRESS_URL'], headers={
-            'Content-Type': 'application/json',
-            'Authorization': 'Basic ' + base64.b64encode(os.environ['WORDPRESS_CREDS'].encode('utf-8')).decode('utf-8')
-        }, json=ramcoClass)
+            body = response.json()
+            with open('logs/results.json', 'a') as f:
+                f.write(f"[{datetime.now().strftime('%I:%M:%S %p')}] {json.dumps(body)}\n")
 
-        body = response.json()
-        with open('logs/results.json', 'a') as f:
-            f.write(f"[{datetime.now().strftime('%I:%M:%S %p')}] {json.dumps(body)}\n")
-
-        print(f"Class processed: {data['cobalt_name']}\n")
-        with open('logs/logs.txt', 'a') as f:
-            f.write(f"[{datetime.now().strftime('%I:%M:%S %p')}] Class processed: {data['cobalt_name']}\n")
+            print(f"Class processed: {data['cobalt_name']}\n")
+            with open('logs/logs.txt', 'a') as f:
+                f.write(f"[{datetime.now().strftime('%I:%M:%S %p')}] Class processed: {data['cobalt_name']}\n")
 
     submitNewClass(data.copy())
 
