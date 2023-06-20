@@ -35,6 +35,7 @@ def push_classes():
     response = requests.post(api_url, data=form_data)
     body = json.loads(response.text)
     data = body['Data']
+    print(data)
 
     start = datetime.strptime(data['cobalt_ClassBeginDate']['Display'], '%Y-%m-%dT%H:%M:%S')
     end = datetime.strptime(data['cobalt_ClassEndDate']['Display'], '%Y-%m-%dT%H:%M:%S')
@@ -71,8 +72,6 @@ def push_classes():
         data['cobalt_cobalt_tag_cobalt_class'] = ', '.join([tag['cobalt_name'] for tag in data['cobalt_cobalt_tag_cobalt_class']])
     else:
         data['cobalt_cobalt_tag_cobalt_class'] = ''
-
-    instructor = data['cobalt_cobalt_classinstructor_cobalt_class'][0]['cobalt_name'] if len(data['cobalt_cobalt_classinstructor_cobalt_class']) > 0 else ''
 
     # Console.log(data.cobalt_price)
     # Console.log(`-------`)
@@ -148,7 +147,6 @@ def push_classes():
         current_time = datetime.now().strftime('%I:%M:%S %p')
         file.write(f"[{current_time}] {json.dumps(data)} \n")
 
-
     data = form_data    # print(data)
 
     existingClasses = []
@@ -166,6 +164,7 @@ def push_classes():
     newClasses = []
 
     newClasses.append(data)
+
 
     def submitNewClass(data):
         ramcoClass = {
@@ -201,6 +200,7 @@ def push_classes():
             f.write(f"[{datetime.now().strftime('%I:%M:%S %p')}] Class processed: {data['cobalt_name']}\n")
 
     submitNewClass(data)
+
 
 if __name__ == '__main__':
     push_classes()
