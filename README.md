@@ -1,2 +1,2 @@
 # migrating-to-python
-Migrating existing scripts for RAMCO to WordPress from JavaScript to Python
+Migrating RAMCO -> WordPress scripts from JavaScript to Python
