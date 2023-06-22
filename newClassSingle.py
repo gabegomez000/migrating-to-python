@@ -2,11 +2,10 @@ import requests
 import json
 from datetime import datetime, timedelta
 import pytz
-from prompt_toolkit import prompt
 import os
 import base64
 from dotenv import load_dotenv
-import time
+
 
 load_dotenv()
 
@@ -15,12 +14,19 @@ def push_classes():
     with open('logs/logs.txt', 'a') as log_file:
         log_file.write(f"[{datetime.now().strftime('%I:%M:%S %p')}] RAMCO to WordPress Sync started.\n")
 
-    class_guid = prompt('Class GUID: ')
-
-    date_start = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    class_guid = input('Class GUID: ')
 
     api_url = os.getenv('API_URL')
     api_key = os.getenv('API_KEY')
+    staging = os.environ.get('STAGING')
+
+    if staging == 'false':
+        print('PUSHING TO: Live Environment')
+    elif staging == 'true':
+        print('PUSHING TO: Staging Environment')
+    else:
+        print('ERROR: STAGING variable not provided.')
+        exit() # Stop execution
 
     form_data = {
         'Key': api_key,
@@ -145,12 +151,22 @@ def push_classes():
         file.write(f"[{current_time}] {json.dumps(data)} \n")
 
     def submitNewClass(data):
-        # Check if the event already exists in the WordPress database
-        response = requests.get(f"{os.getenv('WPEVENT_URL')}/{data['cobalt_classId']}",
-                                headers={
-                                    'Authorization': 'Basic ' + base64.b64encode(
-                                        os.getenv('WORDPRESS_CREDS').encode('utf-8')).decode('utf-8')
+        # Check if the event already exists in the WordPress database (Check for staging or live)
+        if staging == 'false':
+            response = requests.get(f"{os.getenv('WPEVENT_URL')}/{data['cobalt_classId']}",
+                                    headers={
+                                        'Authorization': 'Basic ' + base64.b64encode(
+                                            os.getenv('WORDPRESS_CREDS').encode('utf-8')).decode('utf-8')
                                 })
+        else:
+            response = requests.get(f"{os.getenv('STAGINGWPEVENT_URL')}/{data['cobalt_classId']}/",
+                                    headers={
+                                        'Authorization': 'Basic ' + base64.b64encode(
+                                            os.getenv('WORDPRESS_CREDS').encode('utf-8')).decode('utf-8')
+                                    })
+
+        print(f"Response Status Code:{response.status_code}")
+
         if response.status_code == 200:
             # Event already exists, do not submit
             print(f"Event with class ID {data['cobalt_classId']} already exists in the WordPress database.")
@@ -177,11 +193,17 @@ def push_classes():
                     "id": data['locationId']
                 }
             }
-            response = requests.post(os.environ['WORDPRESS_URL'], headers={
-                'Content-Type': 'application/json',
-                'Authorization': 'Basic ' + base64.b64encode(os.environ['WORDPRESS_CREDS'].encode('utf-8')).decode('utf-8')
-            }, json=ramcoClass)
-
+            if staging == 'false':
+                response = requests.post(os.environ['WORDPRESS_URL'], headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic ' + base64.b64encode(os.environ['WORDPRESS_CREDS'].encode('utf-8')).decode('utf-8')
+                }, json=ramcoClass)
+            else:
+                response = requests.post(os.environ['STAGING_URL'], headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic ' + base64.b64encode(os.environ['WORDPRESS_CREDS'].encode('utf-8')).decode(
+                        'utf-8')
+                }, json=ramcoClass)
             body = response.json()
             with open('logs/results.json', 'a') as f:
                 f.write(f"[{datetime.now().strftime('%I:%M:%S %p')}] {json.dumps(body)}\n")
