@@ -1,11 +1,10 @@
 import requests
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 import pytz
 import os
 import base64
 from dotenv import load_dotenv
-
 
 load_dotenv()
 
@@ -26,7 +25,7 @@ def push_classes():
         print('PUSHING TO: Staging Environment')
     else:
         print('ERROR: STAGING variable not provided.')
-        exit() # Stop execution
+        exit()  # Stop execution
 
     form_data = {
         'Key': api_key,
@@ -74,7 +73,8 @@ def push_classes():
     data['cobalt_price'] = data['cobalt_price'] if data['cobalt_price'] else '0.0000'
 
     if len(data['cobalt_cobalt_tag_cobalt_class']) > 0:
-        data['cobalt_cobalt_tag_cobalt_class'] = ', '.join([tag['cobalt_name'] for tag in data['cobalt_cobalt_tag_cobalt_class']])
+        data['cobalt_cobalt_tag_cobalt_class'] = ', '.join([tag['cobalt_name']
+                                                            for tag in data['cobalt_cobalt_tag_cobalt_class']])
     else:
         data['cobalt_cobalt_tag_cobalt_class'] = ''
 
@@ -83,10 +83,6 @@ def push_classes():
 
     # Remove the last two characters from data.cobalt_price
     data['cobalt_price'] = data['cobalt_price'][:-2]
-
-    # Assuming data is your main dictionary
-    tags_string = data['cobalt_cobalt_tag_cobalt_class']
-    tags_list = tags_string.split(', ')
 
     # Set data.statuscode to data.statuscode.Display
     data['statuscode'] = data['statuscode']['Display']
@@ -139,10 +135,23 @@ def push_classes():
     if len(data['cobalt_cobalt_classinstructor_cobalt_class']) > 0:
         classInstructor = [item['cobalt_name'] for item in data['cobalt_cobalt_classinstructor_cobalt_class']]
         data[
-            'cobalt_Description'] = f"<p style=\"font-weight:bold;color: black;\">Instructor: {classInstructor[0]}</p><br><br>{data['cobalt_Description']}<br><input style=\"background-color: #4CAF50;border: none;color: white;padding: 15px 32px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;\" type=\"button\" value=\"Register Now\" onclick=\"window.location.href='https://miamiportal.ramcoams.net/Authentication/DefaultSingleSignon.aspx?ReturnUrl=%2FEducation%2FRegistration%2FDetails.aspx%3Fcid%3D{data['cobalt_classId']}'\" />"
+            'cobalt_Description'] = f"<p style=\"font-weight:bold;color: black;\">Instructor: {classInstructor[0]}</p" \
+                                    f"><br><br>{data['cobalt_Description']}<br><input style=\"background-color: " \
+                                    f"#4CAF50;border: none;color: white;padding: 15px 32px;text-align: " \
+                                    f"center;text-decoration: none;display: inline-block;font-size: 16px;\" " \
+                                    f"type=\"button\" value=\"Register Now\" " \
+                                    f"onclick=\"window.location.href='https://miamiportal.ramcoams.net/Authentication" \
+                                    f"/DefaultSingleSignon.aspx?ReturnUrl=%2FEducation%2FRegistration%2FDetails.aspx" \
+                                    f"%3Fcid%3D{data['cobalt_classId']}'\" />"
     else:
         data[
-            'cobalt_Description'] = f"{data['cobalt_Description']}<br><input style=\"background-color: #4CAF50;border: none;color: white;padding: 15px 32px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;\" type=\"button\" value=\"Register Now\" onclick=\"window.location.href='https://miamiportal.ramcoams.net/Authentication/DefaultSingleSignon.aspx?ReturnUrl=%2FEducation%2FRegistration%2FDetails.aspx%3Fcid%3D{data['cobalt_classId']}'\" />"
+            'cobalt_Description'] = f"{data['cobalt_Description']}<br><input style=\"background-color: " \
+                                    f"#4CAF50;border: none;color: white;padding: 15px 32px;text-align: " \
+                                    f"center;text-decoration: none;display: inline-block;font-size: 16px;\" " \
+                                    f"type=\"button\" value=\"Register Now\" " \
+                                    f"onclick=\"window.location.href='https://miamiportal.ramcoams.net/Authentication" \
+                                    f"/DefaultSingleSignon.aspx?ReturnUrl=%2FEducation%2FRegistration%2FDetails.aspx" \
+                                    f"%3Fcid%3D{data['cobalt_classId']}'\" />"
 
     data['cobalt_name'] = data['cobalt_name']
 
@@ -150,24 +159,24 @@ def push_classes():
         current_time = datetime.now().strftime('%I:%M:%S %p')
         file.write(f"[{current_time}] {json.dumps(data)} \n")
 
-    def submitNewClass(data):
+    def submitNewClass(data_input):
         # Check if the event already exists in the WordPress database (Check for staging or live)
         if staging == 'false':
-            response = requests.get(f"{os.getenv('WPEVENT_URL')}/{data['cobalt_classId']}",
-                                    headers={
-                                        'Authorization': 'Basic ' + base64.b64encode(
-                                            os.getenv('WORDPRESS_CREDS').encode('utf-8')).decode('utf-8')
-                                })
+            wp_response = requests.get(f"{os.getenv('WPEVENT_URL')}/{data_input['cobalt_classId']}",
+                                       headers={
+                                           'Authorization': 'Basic ' + base64.b64encode(
+                                               os.getenv('WORDPRESS_CREDS').encode('utf-8')).decode('utf-8')
+                                       })
         else:
-            response = requests.get(f"{os.getenv('STAGINGWPEVENT_URL')}/{data['cobalt_classId']}/",
-                                    headers={
-                                        'Authorization': 'Basic ' + base64.b64encode(
-                                            os.getenv('WORDPRESS_CREDS').encode('utf-8')).decode('utf-8')
-                                    })
+            wp_response = requests.get(f"{os.getenv('STAGINGWPEVENT_URL')}/{data_input['cobalt_classId']}/",
+                                       headers={
+                                           'Authorization': 'Basic ' + base64.b64encode(
+                                               os.getenv('WORDPRESS_CREDS').encode('utf-8')).decode('utf-8')
+                                       })
 
-        print(f"Response Status Code:{response.status_code}")
+        print(f"Response Status Code:{wp_response.status_code}")
 
-        if response.status_code == 200:
+        if wp_response.status_code == 200:
             # Event already exists, do not submit
             print(f"Event with class ID {data['cobalt_classId']} already exists in the WordPress database.")
             with open('logs/logs.txt', 'a') as f:
@@ -193,20 +202,22 @@ def push_classes():
                     "id": data['locationId']
                 }
             }
+
             if staging == 'false':
-                response = requests.post(os.environ['WORDPRESS_URL'], headers={
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Basic ' + base64.b64encode(os.environ['WORDPRESS_CREDS'].encode('utf-8')).decode('utf-8')
-                }, json=ramcoClass)
-            else:
-                response = requests.post(os.environ['STAGING_URL'], headers={
+                wp_response = requests.post(os.environ['WORDPRESS_URL'], headers={
                     'Content-Type': 'application/json',
                     'Authorization': 'Basic ' + base64.b64encode(os.environ['WORDPRESS_CREDS'].encode('utf-8')).decode(
                         'utf-8')
                 }, json=ramcoClass)
-            body = response.json()
+            else:
+                wp_response = requests.post(os.environ['STAGING_URL'], headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic ' + base64.b64encode(os.environ['WORDPRESS_CREDS'].encode('utf-8')).decode(
+                        'utf-8')
+                }, json=ramcoClass)
+            json_body = wp_response.json()
             with open('logs/results.json', 'a') as f:
-                f.write(f"[{datetime.now().strftime('%I:%M:%S %p')}] {json.dumps(body)}\n")
+                f.write(f"[{datetime.now().strftime('%I:%M:%S %p')}] {json.dumps(json_body)}\n")
 
             print(f"Class processed: {data['cobalt_name']}\n")
             with open('logs/logs.txt', 'a') as f:
