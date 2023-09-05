@@ -9,10 +9,11 @@ __pycache__/
 #python environments
 include/
 bin/   
+.DS_Store
 
 # Data Files
 pricelist.json
-
+logs/
 # Distribution / packaging
 .Python
 build/
