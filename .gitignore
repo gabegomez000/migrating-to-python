@@ -14,8 +14,8 @@ include/
 bin/   
 .DS_Store
 # Data Files
-data.json
-
+pricelist.json
+logs/
 # Distribution / packaging
 .Python
 build/
