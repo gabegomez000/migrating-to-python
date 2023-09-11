@@ -1,3 +1,5 @@
+pricelist.json
+logs
 .idea
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -10,10 +12,10 @@ __pycache__/
 #python environments
 include/
 bin/   
-
+.DS_Store
 # Data Files
-data.json
-
+pricelist.json
+logs/
 # Distribution / packaging
 .Python
 build/
