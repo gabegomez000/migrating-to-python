@@ -1,15 +1,23 @@
 import requests
+import os
 import json
 import datetime
 import base64
 from dotenv import dotenv_values
+from pricelist import pricelist
 
 #import env variables
 config = dotenv_values(".env")
 
+# set up wordpress url if staging is true in env
+if os.environ.get('STAGING') == 'true':
+    config['WORDPRESS_URL'] = config['STAGING_URL']
 
 #request guid from user
 guid = input("Class GUID: ")
+
+#update pricelist
+pricelist()
 
 # Get the data from the API
 payload = {
@@ -171,7 +179,7 @@ def modify_existing_class(data):
     }
 
     if isinstance(location_id, (int, float)):
-        ramco_class["venue"] = {"id": data[0]['locationId']}
+        ramco_class["venue"] = {"id": data[0]['cobalt_LocationId']}
     
 
     url = f"{config['WORDPRESS_URL']}/by-slug/{data[0]['cobalt_classId']}"
@@ -204,7 +212,7 @@ def modify_featured_class(data):
     }
 
     if isinstance(location_id, (int, float)):
-        ramco_class["venue"] = {"id": data[0]['locationId']}
+        ramco_class["venue"] = {"id": data[0]['cobalt_LocationId']}
 
     url = f"{config['WORDPRESS_URL']}/by-slug/{data[0]['cobalt_classId']}"
     headers = {

@@ -2,26 +2,30 @@ import requests
 import json
 from dotenv import dotenv_values
 
+def pricelist():
+    #import env variables
+    config = dotenv_values(".env")
 
-config = dotenv_values(".env")
+    # Get the data from the API
+    payload = {
+        'Key': config['API_KEY'],
+        'Operation': 'GetEntities',
+        'Entity': 'product',
+        'Filter': 'producttypecode<eq>4 OR producttypecode<eq>2',
+        'Attributes': 'productid,name,price,producttypecode'
+    }
 
-# Get the data from the API
-payload = {
-    'Key': config['API_KEY'],
-    'Operation': 'GetEntities',
-    'Entity': 'product',
-    'Filter': 'producttypecode<eq>4 OR producttypecode<eq>2',
-    'Attributes': 'productid,name,price,producttypecode'
-}
+    r = requests.post(config['API_URL'], data=payload)
 
-r = requests.post(config['API_URL'], data=payload)
+    # Parse the data
+    data = json.loads(r.text)
+    data = data['Data']
 
-# Parse the data
-data = json.loads(r.text)
-data = data['Data']
+    # print(data)
 
-print(data)
+    # Save the data to a file
+    with open('pricelist.json', 'w') as f:
+        f.write(json.dumps(data))
 
-# Save the data to a file
-with open('pricelist.json', 'w') as f:
-    f.write(json.dumps(data))
+if __name__ == "__main__":
+    pricelist()
