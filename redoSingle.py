@@ -5,6 +5,34 @@ import datetime
 import base64
 from dotenv import dotenv_values
 from pricelist import pricelist
+import logging.config
+
+
+#setup logging
+logging_config = {
+    'version': 1,
+    'handlers': {
+        'Console': {
+            'class': 'logging.StreamHandler',
+            'level': 'DEBUG',
+            'stream': 'ext://sys.stderr',  # Redirect to stderr
+            'formatter': 'simple',
+        },
+    },
+    'formatters': {
+        'simple': {
+            'format': '[%(asctime)s] [%(process)d] [%(levelname)s] %(name)s: %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S %z'
+        },
+    },
+    'root': {
+        'level': 'DEBUG',
+        'handlers': ['Console'],
+    },
+}
+
+logging.config.dictConfig(logging_config)
+console_logger = logging.getLogger('Console')
 
 #import env variables
 config = dotenv_values(".env")
@@ -74,11 +102,11 @@ for item in data['cobalt_cobalt_tag_cobalt_class']:
 data['statuscode'] = data['statuscode']['Display']
 
 if data['statuscode'] == 'Inactive' or data['cobalt_PublishtoPortal'] == 'false':
-    data['publish'] = False
-elif data['statuscode'] == 'Active' and data['cobalt_PublishtoPortal'] == 'true':
     data['publish'] = True
-else:
+elif data['statuscode'] == 'Active' and data['cobalt_PublishtoPortal'] == 'true':
     data['publish'] = False
+else:
+    data['publish'] = True
 
 if data['cobalt_fullday'] == 'true':
     data['all_day'] = True
@@ -139,19 +167,19 @@ if isinstance(response['id'], int):
     response_tags = [data['name'] for data in response['tags']]
     all_tags = data['cobalt_cobalt_tag_cobalt_class'] + response_tags
 
-    print(response['url'])
+    #print(response['url'])
     filtered_tags = list(set(all_tags))
 
     if response['image'] == False :
         data['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
-        print("No class image!")
+        #print("No class image!")
         existing_classes.append(data)
 
     else:
 
         data['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
         data['featuredImage'] = response['image']['url']
-        print(response['image']['url'])
+        #print(response['image']['url'])
         featured_classes.append(data)
 
 else:
@@ -160,7 +188,7 @@ else:
 
 
 def modify_existing_class(data):
-    print(data)
+    console_logger.debug(data)
 
     ramco_class = {
         "title": data[0]['cobalt_name'],
@@ -189,11 +217,11 @@ def modify_existing_class(data):
     }
     response = requests.post(url, headers=headers, data=json.dumps(ramco_class))
     body = response.json()
-    print(body)
+    console_logger.debug(body)
     print(f"Class processed: {data[0]['cobalt_name']}")
 
 def modify_featured_class(data):
-
+    console_logger.debug(data)
     ramco_class = {
         "title": data[0]['cobalt_name'],
         "status": "publish",
@@ -208,7 +236,8 @@ def modify_featured_class(data):
         "show_map_link": True,
         "show_map": True,
         "cost": data[0]['cobalt_price'],
-        "tags": data[0]['cobalt_cobalt_tag_cobalt_class']
+        "tags": data[0]['cobalt_cobalt_tag_cobalt_class'],
+        "featured": True
     }
 
     if isinstance(location_id, (int, float)):
@@ -223,7 +252,7 @@ def modify_featured_class(data):
 
     body = response.json()
 
-    print(body)
+    console_logger.debug(body)
     print(f"Class processed: {data[0]['cobalt_name']}")
 
 if len(existing_classes) > 0:
