@@ -142,11 +142,11 @@ else:
 if data['cobalt_OutsideProvider'] == 'true':
     data['cobalt_Description'] = f"{data['cobalt_Description']}<br><input style=\"background-color: #4CAF50;border: none;color: white;padding: 15px 32px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;\" type=\"button\" value=\"Register Now\" onclick=\"window.location.href='{data['cobalt_OutsideProviderLink']}'\" />"
 else:
-    data['cobalt_Description'] = f"${data['cobalt_Description']}<br><input style=\"background-color: #4CAF50;border: none;color: white;padding: 15px 32px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;\" type=\"button\" value=\"Register Now\" onclick=\"window.location.href='https://miamiportal.ramcoams.net/Authentication/DefaultSingleSignon.aspx?ReturnUrl=%2FEducation%2FRegistration%2FDetails.aspx%3Fcid%3D{data['cobalt_classId']}'\" />"
+    data['cobalt_Description'] = f"{data['cobalt_Description']}<br><input style=\"background-color: #4CAF50;border: none;color: white;padding: 15px 32px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;\" type=\"button\" value=\"Register Now\" onclick=\"window.location.href='https://miamiportal.ramcoams.net/Authentication/DefaultSingleSignon.aspx?ReturnUrl=%2FEducation%2FRegistration%2FDetails.aspx%3Fcid%3D{data['cobalt_classId']}'\" />"
 
 if(len(data['cobalt_cobalt_classinstructor_cobalt_class']) > 0):
     classInstructor = [item['cobalt_name'] for item in data['cobalt_cobalt_classinstructor_cobalt_class']]
-    data['cobalt_Description'] = f"<p style=\"font-weight:bold;color: black;\">Instructor: ${classInstructor[0]}</p><br><br>${data['cobalt_Description']}"
+    data['cobalt_Description'] = f"<p style=\"font-weight:bold;color: black;\">Instructor: {classInstructor[0]}</p><br><br>{data['cobalt_Description']}"
 else:
     data['cobalt_Description'] = data['cobalt_Description']
 
