@@ -8,6 +8,8 @@ from dotenv import dotenv_values
 from pricelist import pricelist
 import logging.config
 
+#import env variables
+config = dotenv_values(".env")
 
 #setup logging
 logging_config = {
@@ -38,11 +40,17 @@ logging_config = {
     },
 }
 
+def send_slack_message(message):
+    payload = {
+        "text": message
+    }
+    headers = {
+        "Content-Type": "application/json"
+    }
+    response = requests.post(config["SLACK_WEBHOOK"], headers=headers, data=json.dumps(payload))
+
 logging.config.dictConfig(logging_config)
 console_logger = logging.getLogger('Console')
-
-#import env variables
-config = dotenv_values(".env")
 
 # set up wordpress url if staging is true in env
 if os.environ.get('STAGING') == 'true':
@@ -197,7 +205,7 @@ def check_if_exists(classes):
         response = requests.get(f"{config['WORDPRESS_URL']}/by-slug/{obj['cobalt_classId']}")
         response = response.json()
 
-        print(response)
+        #print(response)
 
         if 'id' in response:
 
@@ -276,7 +284,11 @@ async def submit_new_class(data):
     #post data
     response = requests.post(url, headers=headers, data=json.dumps(ramcoClass))
     
-    console_logger.debug(response.text)
+    if response.status_code == 201:
+        console_logger.debug("Class updated successfully!")
+    else:
+        console_logger.error(response.text)
+        send_slack_message(response.text)
 
     #print(response)
 
