@@ -19,6 +19,12 @@ logging_config = {
             'stream': 'ext://sys.stderr',  # Redirect to stderr
             'formatter': 'simple',
         },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'logs/newClasses.log',
+            'level': 'DEBUG',
+            'formatter': 'simple'
+        }
     },
     'formatters': {
         'simple': {
@@ -28,7 +34,7 @@ logging_config = {
     },
     'root': {
         'level': 'DEBUG',
-        'handlers': ['Console'],
+        'handlers': ['Console', 'file'],
     },
 }
 
