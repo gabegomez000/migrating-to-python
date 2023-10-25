@@ -8,6 +8,8 @@ from dotenv import dotenv_values
 from pricelist import pricelist
 import logging.config
 
+#import env variables
+config = dotenv_values(".env")
 
 #setup logging
 logging_config = {
@@ -32,11 +34,17 @@ logging_config = {
     },
 }
 
+def send_slack_message(message):
+    payload = {
+        "text": message
+    }
+    headers = {
+        "Content-Type": "application/json"
+    }
+    response = requests.post(config["SLACK_WEBHOOK"], headers=headers, data=json.dumps(payload))
+
 logging.config.dictConfig(logging_config)
 console_logger = logging.getLogger('Console')
-
-#import env variables
-config = dotenv_values(".env")
 
 # set up wordpress url if staging is true in env
 if os.environ.get('STAGING') == 'true':
@@ -54,8 +62,9 @@ payload = {
     'Key': config['API_KEY'],
     'Operation': 'GetEntities',
     'Entity': 'cobalt_class',
-    'Filter': f'createdon<ge>{date_start} AND statuscode<eq>1',
-    'Attributes': 'cobalt_classbegindate,cobalt_classenddate,cobalt_classid,cobalt_locationid,cobalt_name,cobalt_description,cobalt_locationid,cobalt_cobalt_tag_cobalt_class/cobalt_name,cobalt_fullday,cobalt_publishtoportal,statuscode,cobalt_cobalt_classinstructor_cobalt_class/cobalt_name,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_productid,cobalt_cobalt_class_cobalt_classregistrationfee/statuscode,cobalt_outsideprovider,cobalt_outsideproviderlink,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_publishtoportal'
+    'Filter': f'modifiedon<ge>{date_start}',
+    'Attributes': 'cobalt_classbegindate,cobalt_classenddate,cobalt_classid,cobalt_locationid,cobalt_name,cobalt_description,cobalt_locationid,cobalt_cobalt_tag_cobalt_class/cobalt_name,cobalt_fullday,cobalt_publishtoportal,statuscode,cobalt_cobalt_classinstructor_cobalt_class/cobalt_name,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_productid,cobalt_cobalt_class_cobalt_classregistrationfee/statuscode,cobalt_outsideprovider,cobalt_outsideproviderlink,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_publishtoportal',
+    'maxresults': 5
 }
 
 #request data from RAMCO API
@@ -179,7 +188,6 @@ try:
 except Exception as e:
     console_logger.error(e)
 
-
 new_classes = []
 featured_classes = []
 existing_classes = []
@@ -187,11 +195,10 @@ existing_classes = []
 #check if class exists
 def check_if_exists(classes):
     for obj in classes:
-        print(obj['cobalt_classId'])
         response = requests.get(f"{config['WORDPRESS_URL']}/by-slug/{obj['cobalt_classId']}")
         response = response.json()
 
-        print(response)
+        #print(response)
 
         if 'id' in response:
 
@@ -227,18 +234,12 @@ else:
     except Exception as e:
         console_logger.error(e)
 
-#check if class exists
-# print(existing_classes)
-# print(featured_classes)
-#print(new_classes)
-
-#print amount of classes in each array
 console_logger.debug(f"Existing Classes: {len(existing_classes)}")
 console_logger.debug(f"Featured Classes: {len(featured_classes)}")
 console_logger.debug(f"New Classes: {len(new_classes)}")
 
-async def submit_new_class(data):
-    console_logger.debug(f"Submitting new class: {data['cobalt_name']} - {data['cobalt_classId']}")
+async def submit_existing_class(data):
+    console_logger.debug(f"Submitting existing class: {data['cobalt_classId']} - {data['cobalt_LocationId']}")
     ramcoClass = {
                 "title": data['cobalt_name'],
                 "status": "publish",
@@ -270,12 +271,63 @@ async def submit_new_class(data):
     #post data
     response = requests.post(url, headers=headers, data=json.dumps(ramcoClass))
     
-    console_logger.debug(response.text)
+    if response.status_code == 201:
+        console_logger.debug("Class updated successfully!")
+    else:
+        console_logger.error(response.text)
+        send_slack_message(response.text)
 
     #print(response)
 
-async def sumbit_classes(data):
-    for obj in data:
-        await submit_new_class(obj)
+async def submit_featured_class(data):
+    console_logger.debug(f"Submitting featured class: {data['cobalt_classId']} - {data['cobalt_LocationId']}")
+    ramcoClass = {
+                "title": data['cobalt_name'],
+                "status": "publish",
+                "hide_from_listings": data['publish'],
+                "description": data['cobalt_Description'],
+                "all_day": data['all_day'],
+                "start_date": data['cobalt_ClassBeginDate']['Display'],
+                "end_date": data['cobalt_ClassEndDate']['Display'],
+                "slug": data['cobalt_classId'],
+                "categories": data['cobalt_cobalt_tag_cobalt_class'],
+                "show_map_link": True,
+                "show_map": True,
+                "cost": data['cobalt_price'],
+                "tags": data['cobalt_cobalt_tag_cobalt_class']
+            }
+    
+    if data['cobalt_LocationId'] != 0:
+        ramcoClass['venue'] = {
+            "id": data['cobalt_LocationId']
+        }
 
-asyncio.run(sumbit_classes(new_classes))
+    #set url and headers
+    url = f"{config['WORDPRESS_URL']}"
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
+    }
+
+    #post data
+    response = requests.post(url, headers=headers, data=json.dumps(ramcoClass))
+    
+    if response.status_code == 201:
+        console_logger.debug("Class updated successfully!")
+    else:
+        console_logger.error(response.text)
+        send_slack_message(response.text)
+
+
+    #print(response)
+
+async def sumbit_e_classes(data):
+    for obj in data:
+        await submit_existing_class(obj)
+
+async def sumbit_f_classes(data):
+    for obj in data:
+        await submit_featured_class(obj)
+
+asyncio.run(sumbit_e_classes(existing_classes))
+asyncio.run(sumbit_f_classes(featured_classes))
