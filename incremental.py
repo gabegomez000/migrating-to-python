@@ -267,7 +267,7 @@ async def submit_existing_class(data):
         }
     
     #set url and headers
-    url = f"{config['WORDPRESS_URL']}"
+    url = f"{config['WORDPRESS_URL']}/by-slug/{data['cobalt_classId']}"
     headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
@@ -308,7 +308,7 @@ async def submit_featured_class(data):
         }
 
     #set url and headers
-    url = f"{config['WORDPRESS_URL']}"
+    url = f"{config['WORDPRESS_URL']}/by-slug/{data['cobalt_classId']}"
     headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
