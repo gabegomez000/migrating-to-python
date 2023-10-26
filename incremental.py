@@ -132,11 +132,11 @@ def process_classes(classes):
 
         #set publish status
         if obj['statuscode'] == 'Inactive' or obj['cobalt_PublishtoPortal'] == 'false':
-            obj['publish'] = False
-        elif obj['statuscode'] == 'Active' and obj['cobalt_PublishtoPortal'] == 'true':
             obj['publish'] = True
-        else:
+        elif obj['statuscode'] == 'Active' and obj['cobalt_PublishtoPortal'] == 'true':
             obj['publish'] = False
+        else:
+            obj['publish'] = True
 
         #set all day status
         if obj['cobalt_fullday'] == 'true':
