@@ -276,7 +276,7 @@ async def submit_existing_class(data):
     #post data
     response = requests.post(url, headers=headers, data=json.dumps(ramcoClass))
     
-    if response.status_code == 201:
+    if response.status_code == 200:
         console_logger.debug("Class updated successfully!")
     else:
         console_logger.error(response.text)
@@ -299,7 +299,8 @@ async def submit_featured_class(data):
                 "show_map_link": True,
                 "show_map": True,
                 "cost": data['cobalt_price'],
-                "tags": data['cobalt_cobalt_tag_cobalt_class']
+                "tags": data['cobalt_cobalt_tag_cobalt_class'],
+                "image": data['featuredImage']
             }
     
     if data['cobalt_LocationId'] != 0:
@@ -317,7 +318,7 @@ async def submit_featured_class(data):
     #post data
     response = requests.post(url, headers=headers, data=json.dumps(ramcoClass))
     
-    if response.status_code == 201:
+    if response.status_code == 200:
         console_logger.debug("Class updated successfully!")
     else:
         console_logger.error(response.text)
