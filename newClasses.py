@@ -284,8 +284,8 @@ async def submit_new_class(data):
     #post data
     response = requests.post(url, headers=headers, data=json.dumps(ramcoClass))
     
-    if response.status_code == 201:
-        console_logger.debug("Class updated successfully!")
+    if response.status_code == 200:
+        console_logger.debug("Class added successfully!")
     else:
         console_logger.error(response.text)
         send_slack_message(response.text)
