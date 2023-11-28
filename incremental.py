@@ -177,11 +177,11 @@ def process_classes(classes):
         if obj['cobalt_OutsideProvider'] == 'true':
             obj['cobalt_Description'] = f"{obj['cobalt_Description']}<br><input style=\"background-color: #4CAF50;border: none;color: white;padding: 15px 32px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;\" type=\"button\" value=\"Register Now\" onclick=\"window.location.href='{obj['cobalt_OutsideProviderLink']}'\" />"
         else:
-            obj['cobalt_Description'] = f"${obj['cobalt_Description']}<br><input style=\"background-color: #4CAF50;border: none;color: white;padding: 15px 32px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;\" type=\"button\" value=\"Register Now\" onclick=\"window.location.href='https://miamiportal.ramcoams.net/Authentication/DefaultSingleSignon.aspx?ReturnUrl=%2FEducation%2FRegistration%2FDetails.aspx%3Fcid%3D{obj['cobalt_classId']}'\" />"
+            obj['cobalt_Description'] = f"{obj['cobalt_Description']}<br><input style=\"background-color: #4CAF50;border: none;color: white;padding: 15px 32px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;\" type=\"button\" value=\"Register Now\" onclick=\"window.location.href='https://miamiportal.ramcoams.net/Authentication/DefaultSingleSignon.aspx?ReturnUrl=%2FEducation%2FRegistration%2FDetails.aspx%3Fcid%3D{obj['cobalt_classId']}'\" />"
 
         if(len(obj['cobalt_cobalt_classinstructor_cobalt_class']) > 0):
             classInstructor = [item['cobalt_name'] for item in obj['cobalt_cobalt_classinstructor_cobalt_class']]
-            obj['cobalt_Description'] = f"<p style=\"font-weight:bold;color: black;\">Instructor: ${classInstructor[0]}</p><br><br>${obj['cobalt_Description']}"
+            obj['cobalt_Description'] = f"<p style=\"font-weight:bold;color: black;\">Instructor: {classInstructor[0]}</p><br><br>{obj['cobalt_Description']}"
         else:
             obj['cobalt_Description'] = obj['cobalt_Description']
 
@@ -214,15 +214,15 @@ def check_if_exists(classes):
             console_logger.debug(response['url'])
             filtered_tags = list(set(all_tags))
 
-            if "image" in response:
+            if response["image"] == False:
+                obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
+                console_logger.debug("No class image!")
+                existing_classes.append(obj)
+            else:
                 obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
                 obj['featuredImage'] = response['image']['url']
                 console_logger.debug(response['image']['url'])
                 featured_classes.append(obj)
-            else:
-                obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
-                console_logger.debug("No class image!")
-                existing_classes.append(obj)
         else:
             new_classes.append(obj)
 

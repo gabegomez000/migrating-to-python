@@ -131,8 +131,6 @@ default_location_id = ""  # Default location ID value
 
 style, location_id = location_mapping.get(cobalt_location_id, (default_style, default_location_id))
 
-
-
 if isinstance(location_id, (int, float)):
     data['cobalt_name'] = f"<span style=\"color:{style};\">{data['cobalt_name']}</span>"
     data['cobalt_LocationId'] = location_id
@@ -166,28 +164,31 @@ if response.status_code == 200:
 
     response = response.json()
 
+    #console_logger.debug(response)
+
     response_tags = [response['name'] for response in response['tags']]
     all_tags = data['cobalt_cobalt_tag_cobalt_class'] + response_tags
 
     console_logger.debug(response['url'])
     filtered_tags = list(set(all_tags))
 
-    if "image" in response:
+    if response["image"] == False:
+        data['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
+        console_logger.debug("No class image!")
+        existing_classes.append(data)
+    else:
         data['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
         data['featuredImage'] = response['image']['url']
         console_logger.debug(response['image']['url'])
-        featured_classes.append(response)
-    else:
-        data['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
-        console_logger.debug("No class image!")
-        existing_classes.append(response)
+        featured_classes.append(data)
+        
 else:
-    new_classes.append(response)
+    new_classes.append(data)
 
-print(featured_classes)
+# print(featured_classes)
 
 def modify_existing_class(data):
-    console_logger.debug(data)
+    #console_logger.debug(data)
 
     ramco_class = {
         "title": data[0]['cobalt_name'],
@@ -254,7 +255,9 @@ def modify_featured_class(data):
     console_logger.debug(body)
     print(f"Class processed: {data[0]['cobalt_name']}")
 
-# if len(existing_classes) > 0:
-#     modify_existing_class(existing_classes)
-# elif len(featured_classes) > 0:
-#     modify_featured_class(featured_classes)
+print(existing_classes)
+
+if len(existing_classes) > 0:
+    modify_existing_class(existing_classes)
+elif len(featured_classes) > 0:
+    modify_featured_class(featured_classes)
