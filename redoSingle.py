@@ -166,28 +166,25 @@ if response.status_code == 200:
 
     response = response.json()
 
-    response_tags = [data['name'] for data in response['tags']]
+    response_tags = [response['name'] for response in response['tags']]
     all_tags = data['cobalt_cobalt_tag_cobalt_class'] + response_tags
 
-    #print(response['url'])
+    console_logger.debug(response['url'])
     filtered_tags = list(set(all_tags))
 
-    if response['image'] == False :
-        data['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
-        #print("No class image!")
-        existing_classes.append(data)
-
-    else:
-
+    if "image" in response:
         data['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
         data['featuredImage'] = response['image']['url']
-        #print(response['image']['url'])
-        featured_classes.append(data)
-
+        console_logger.debug(response['image']['url'])
+        featured_classes.append(response)
+    else:
+        data['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
+        console_logger.debug("No class image!")
+        existing_classes.append(response)
 else:
-    new_classes.append(data)
+    new_classes.append(response)
 
-
+print(featured_classes)
 
 def modify_existing_class(data):
     console_logger.debug(data)
@@ -257,7 +254,7 @@ def modify_featured_class(data):
     console_logger.debug(body)
     print(f"Class processed: {data[0]['cobalt_name']}")
 
-if len(existing_classes) > 0:
-    modify_existing_class(existing_classes)
-elif len(featured_classes) > 0:
-    modify_featured_class(featured_classes)
+# if len(existing_classes) > 0:
+#     modify_existing_class(existing_classes)
+# elif len(featured_classes) > 0:
+#     modify_featured_class(featured_classes)

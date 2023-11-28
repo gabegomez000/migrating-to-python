@@ -201,30 +201,28 @@ existing_classes = []
 def check_if_exists(classes):
     for obj in classes:
         response = requests.get(f"{config['WORDPRESS_URL']}/by-slug/{obj['cobalt_classId']}")
-        response = response.json()
 
         #print(response)
 
-        if 'id' in response:
+        if response.status_code == 200:
 
-            response_tags = [obj['name'] for obj in response['tags']]
+            response = response.json()
+
+            response_tags = [response['name'] for response in response['tags']]
             all_tags = obj['cobalt_cobalt_tag_cobalt_class'] + response_tags
 
-            print(response['url'])
+            console_logger.debug(response['url'])
             filtered_tags = list(set(all_tags))
 
-            if response['image'] == False :
-                obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
-                print("No class image!")
-                existing_classes.append(obj)
-
-            else:
-
+            if "image" in response:
                 obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
                 obj['featuredImage'] = response['image']['url']
-                print(response['image']['url'])
+                console_logger.debug(response['image']['url'])
                 featured_classes.append(obj)
-
+            else:
+                obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
+                console_logger.debug("No class image!")
+                existing_classes.append(obj)
         else:
             new_classes.append(obj)
 
