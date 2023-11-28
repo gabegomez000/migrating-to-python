@@ -158,11 +158,13 @@ new_classes = []
 
 def check_if_exists():
     response = requests.get(f"{config['WORDPRESS_URL']}/by-slug/{data['cobalt_classId']}")
-    return response.json()
+    return response
 
 response = check_if_exists()
 
-if isinstance(response['id'], int):
+if response.status_code == 200:
+
+    response = response.json()
 
     response_tags = [data['name'] for data in response['tags']]
     all_tags = data['cobalt_cobalt_tag_cobalt_class'] + response_tags
