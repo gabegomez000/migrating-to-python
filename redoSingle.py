@@ -1,8 +1,5 @@
-import requests
-import os
-import json
-import datetime
-import base64
+import requests, json, datetime, base64, os
+from urllib.parse import urlencode
 from dotenv import dotenv_values
 from pricelist import pricelist
 import logging.config
@@ -207,15 +204,16 @@ def modify_existing_class(data):
     }
 
     if isinstance(location_id, (int, float)):
-        ramco_class["venue"] = {"id": data[0]['cobalt_LocationId']}
-    
+        ramco_class["venue"] = data[0]['cobalt_LocationId']
+
+    payload = urlencode(ramco_class)
 
     url = f"{config['WORDPRESS_URL']}/by-slug/{data[0]['cobalt_classId']}"
     headers = {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
     }
-    response = requests.post(url, headers=headers, data=json.dumps(ramco_class))
+    response = requests.post(url, headers=headers, data=payload)
     body = response.json()
     console_logger.debug(body)
     print(f"Class processed: {data[0]['cobalt_name']}")
@@ -241,14 +239,16 @@ def modify_featured_class(data):
     }
 
     if isinstance(location_id, (int, float)):
-        ramco_class["venue"] = {"id": data[0]['cobalt_LocationId']}
+        ramco_class["venue"] = data[0]['cobalt_LocationId']
+
+    payload = urlencode(ramco_class)
 
     url = f"{config['WORDPRESS_URL']}/by-slug/{data[0]['cobalt_classId']}"
     headers = {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
     }
-    response = requests.post(url, headers=headers, data=json.dumps(ramco_class))
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
 
     body = response.json()
 

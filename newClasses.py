@@ -4,6 +4,7 @@ import json
 import datetime
 import base64
 import asyncio
+from urllib.parse import urlencode
 from dotenv import dotenv_values
 from pricelist import pricelist
 import logging.config
@@ -161,12 +162,10 @@ def process_classes(classes):
 
         #set default style and location id
         default_style = ""  # Default style value
-        default_location_id = 0  # Default location ID value
+        default_location_id = ""  # Default location ID value
 
-        #set style and location id
         style, location_id = location_mapping.get(cobalt_location_id, (default_style, default_location_id))
 
-        #set style
         if isinstance(location_id, (int, float)):
             obj['cobalt_name'] = f"<span style=\"color:{style};\">{obj['cobalt_name']}</span>"
             obj['cobalt_LocationId'] = location_id
@@ -269,15 +268,15 @@ async def submit_new_class(data):
                 "tags": data['cobalt_cobalt_tag_cobalt_class']
             }
     
-    if data['cobalt_LocationId'] != 0:
-        ramcoClass['venue'] = {
-            "id": data['cobalt_LocationId']
-        }
-    
+    if isinstance(data['cobalt_LocationId'], (int, float)):
+        ramcoClass["venue"] = data['cobalt_LocationId']
+
+    payload = urlencode(ramcoClass)
+
     #set url and headers
     url = f"{config['WORDPRESS_URL']}"
     headers = {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
     }
 
