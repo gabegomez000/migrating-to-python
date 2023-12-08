@@ -161,17 +161,10 @@ def push_classes():
 
     def submitNewClass(data_input):
         # Check if the event already exists in the WordPress database (Check for staging or live)
-        if staging == 'false':
-            wp_response = requests.get(f"{os.getenv('WPEVENT_URL')}/{data_input['cobalt_classId']}",
-                                       headers={
-                                           'Authorization': 'Basic ' + base64.b64encode(
-                                               os.getenv('WORDPRESS_CREDS').encode('utf-8')).decode('utf-8')
-                                       })
-        else:
-            wp_response = requests.get(f"{os.getenv('STAGINGWPEVENT_URL')}/{data_input['cobalt_classId']}/",
-                                       headers={
-                                           'Authorization': 'Basic ' + base64.b64encode(
-                                               os.getenv('WORDPRESS_CREDS').encode('utf-8')).decode('utf-8')
+        wp_response = requests.get(f"{config['WORDPRESS_URL']}/by-slug/{data_input['cobalt_classId']}/",
+                                    headers={
+                                        'Authorization': 'Basic ' + base64.b64encode(
+                                            config['WORDPRESS_CREDS'].encode('utf-8')).decode('utf-8')
                                        })
 
         print(f"Response Status Code:{wp_response.status_code}")
@@ -214,7 +207,7 @@ def push_classes():
 
             #body = response.json()
 
-            print(f"Class processed: {data[0]['cobalt_name']}")
+            print(f"Class processed: {data['cobalt_name']}")
 
     submitNewClass(data.copy())
 
