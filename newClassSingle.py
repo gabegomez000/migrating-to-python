@@ -4,10 +4,14 @@ from datetime import datetime
 import pytz
 import os
 import base64
-from dotenv import load_dotenv
+from urllib.parse import urlencode
+from dotenv import dotenv_values
 
-load_dotenv()
+config = dotenv_values(".env")
 
+# set up wordpress url if staging is true in env
+if os.environ.get('STAGING') == 'true':
+    config['WORDPRESS_URL'] = config['STAGING_URL']
 
 def push_classes():
     with open('logs/logs.txt', 'a') as log_file:
@@ -15,8 +19,8 @@ def push_classes():
 
     class_guid = input('Class GUID: ')
 
-    api_url = os.getenv('API_URL')
-    api_key = os.getenv('API_KEY')
+    api_url = config['API_URL']
+    api_key = config['API_KEY']
     staging = os.environ.get('STAGING')
 
     if staging == 'false':
@@ -98,32 +102,28 @@ def push_classes():
     # Set data.all_day based on data.cobalt_fullday
     data['all_day'] = data['cobalt_fullday'] == 'true'
 
+    cobalt_location_id = data['cobalt_LocationId']['Display']
+
     # Switch case for data.cobalt_LocationId.Display
-    location_id = data['cobalt_LocationId']['Display']
-    if location_id == "MIAMI HQ":
-        data['cobalt_name'] = f"<span style='color:#798e2d;'>{data['cobalt_name']}</span>"
-        data['locationId'] = 4694
-    elif location_id == "West Broward - Sawgrass Office":
-        data['cobalt_name'] = f"<span style='color:#0082c9;'>{data['cobalt_name']}</span>"
-        data['locationId'] = 4698
-    elif location_id == "Coral Gables Office":
-        data['cobalt_name'] = f"<span style='color:#633e81;'>{data['cobalt_name']}</span>"
-        data['locationId'] = 4696
-    elif location_id == "JTHS - MIAMI Training Room (Jupiter)":
-        data['cobalt_name'] = f"<span style='color:#005962;'>{data['cobalt_name']}</span>"
-        data['locationId'] = 4718
-    elif location_id == "Northwestern Dade":
-        data['cobalt_name'] = f"<span style='color:#9e182f;'>{data['cobalt_name']}</span>"
-        data['locationId'] = 4735
-    elif location_id == "Northwestern Dade Office":
-        data['cobalt_name'] = f"<span style='color:#9e182f;'>{data['cobalt_name']}</span>"
-        data['locationId'] = 4735
-    elif location_id == "NE Broward Office-Ft. Lauderdale":
-        data['cobalt_name'] = f"<span style='color:#f26722;'>{data['cobalt_name']}</span>"
-        data['locationId'] = 4702
-    elif location_id == "Aventura Office":
-        data['cobalt_name'] = f"<span style='color:#000000;'>{data['cobalt_name']}</span>"
-        data['locationId'] = 22099
+    location_mapping = {
+    "MIAMI HQ": ("#798e2d", 4694),
+    "West Broward - Sawgrass Office": ("#0082c9", 4698),
+    "Coral Gables Office": ("#633e81", 4696),
+    "JTHS - MIAMI Training Room (Jupiter)": ("#005962", 4718),
+    "Northwestern Dade": ("#9e182f", 4735),
+    "Northwestern Dade Office": ("#9e182f", 4735),
+    "NE Broward Office-Ft. Lauderdale": ("#f26722", 4702),
+    "Aventura Office": ("#000000", 22099)
+    }
+
+    default_style = ""  # Default style value
+    default_location_id = ""  # Default location ID value
+
+    style, location_id = location_mapping.get(cobalt_location_id, (default_style, default_location_id))
+
+    if isinstance(location_id, (int, float)):
+        data['cobalt_name'] = f"<span style=\"color:{style};\">{data['cobalt_name']}</span>"
+        data['cobalt_LocationId'] = location_id
     else:
         data['cobalt_name'] = data['cobalt_name']
 
@@ -198,30 +198,23 @@ def push_classes():
                 "show_map": True,
                 "cost": data['cobalt_price'],
                 "tags": data['cobalt_cobalt_tag_cobalt_class'],
-                "venue": {
-                    "id": data['locationId']
-                }
             }
 
-            if staging == 'false':
-                wp_response = requests.post(os.environ['WORDPRESS_URL'], headers={
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Basic ' + base64.b64encode(os.environ['WORDPRESS_CREDS'].encode('utf-8')).decode(
-                        'utf-8')
-                }, json=ramcoClass)
-            else:
-                wp_response = requests.post(os.environ['STAGING_URL'], headers={
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Basic ' + base64.b64encode(os.environ['WORDPRESS_CREDS'].encode('utf-8')).decode(
-                        'utf-8')
-                }, json=ramcoClass)
-            json_body = wp_response.json()
-            with open('logs/results.json', 'a') as f:
-                f.write(f"[{datetime.now().strftime('%I:%M:%S %p')}] {json.dumps(json_body)}\n")
+            if isinstance(location_id, (int, float)):
+                ramcoClass["venue"] = data[0]['cobalt_LocationId']
 
-            print(f"Class processed: {data['cobalt_name']}\n")
-            with open('logs/logs.txt', 'a') as f:
-                f.write(f"[{datetime.now().strftime('%I:%M:%S %p')}] Class processed: {data['cobalt_name']}\n")
+            payload = urlencode(ramcoClass)
+
+            url = config['WORDPRESS_URL']
+            headers = {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
+            }
+            response = requests.post(url, headers=headers, data=payload)
+
+            #body = response.json()
+
+            print(f"Class processed: {data[0]['cobalt_name']}")
 
     submitNewClass(data.copy())
 
