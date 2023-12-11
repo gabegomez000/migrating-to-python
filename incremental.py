@@ -209,6 +209,9 @@ def check_if_exists(classes):
             response_tags = [response['name'] for response in response['tags']]
             all_tags = obj['cobalt_cobalt_tag_cobalt_class'] + response_tags
 
+            obj['sticky']= response['sticky']
+            obj['featured']= response['featured']
+
             console_logger.debug(response['url'])
             filtered_tags = list(set(all_tags))
 
@@ -253,6 +256,8 @@ async def submit_existing_class(data):
                 "categories": data['cobalt_cobalt_tag_cobalt_class'],
                 "show_map_link": True,
                 "show_map": True,
+                "featured": data['featured'],
+                "sticky": data['sticky'],
                 "cost": data['cobalt_price'],
                 "tags": data['cobalt_cobalt_tag_cobalt_class']
             }
@@ -292,6 +297,8 @@ async def submit_featured_class(data):
                 "categories": data['cobalt_cobalt_tag_cobalt_class'],
                 "show_map_link": True,
                 "show_map": True,
+                "featured": data['featured'],
+                "sticky": data['sticky'],
                 "cost": data['cobalt_price'],
                 "tags": data['cobalt_cobalt_tag_cobalt_class'],
                 "image": data['featuredImage']
