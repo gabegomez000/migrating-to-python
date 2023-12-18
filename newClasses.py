@@ -271,12 +271,12 @@ async def submit_new_class(data):
     if isinstance(data['cobalt_LocationId'], (int, float)):
         ramcoClass["venue"] = data['cobalt_LocationId']
 
-    payload = urlencode(ramcoClass)
+    #payload = urlencode(ramcoClass)
 
     #set url and headers
     url = f"{config['WORDPRESS_URL']}"
     headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
         'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
     }
 
