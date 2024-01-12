@@ -169,6 +169,9 @@ if response.status_code == 200:
     console_logger.debug(response['url'])
     filtered_tags = list(set(all_tags))
 
+    data['sticky']= response['sticky']
+    data['featured']= response['featured']
+
     if response["image"] == False:
         data['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
         console_logger.debug("No class image!")
@@ -200,7 +203,9 @@ def modify_existing_class(data):
         "show_map_link": True,
         "show_map": True,
         "cost": data[0]['cobalt_price'],
-        "tags": data[0]['cobalt_cobalt_tag_cobalt_class']
+        "tags": data[0]['cobalt_cobalt_tag_cobalt_class'],
+        "featured": data[0]['featured'],
+        "sticky": data[0]['sticky']
     }
 
     if isinstance(location_id, (int, float)):
@@ -235,7 +240,8 @@ def modify_featured_class(data):
         "show_map": True,
         "cost": data[0]['cobalt_price'],
         "tags": data[0]['cobalt_cobalt_tag_cobalt_class'],
-        "featured": True
+        "featured": data[0]['featured'],
+        "sticky": data[0]['sticky']
     }
 
     if isinstance(location_id, (int, float)):

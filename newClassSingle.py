@@ -36,11 +36,7 @@ def push_classes():
         'Operation': 'GetEntity',
         'Entity': 'cobalt_class',
         'Guid': class_guid,
-        'Attributes': 'cobalt_classbegindate,cobalt_classenddate,cobalt_classid,cobalt_locationid,cobalt_name,'
-                      'cobalt_description,cobalt_locationid,cobalt_cobalt_tag_cobalt_class/cobalt_name,cobalt_fullday,'
-                      'cobalt_publishtoportal,statuscode,cobalt_cobalt_classinstructor_cobalt_class/cobalt_name,'
-                      'cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_productid,'
-                      'cobalt_cobalt_class_cobalt_classregistrationfee/statuscode'
+        'Attributes': 'cobalt_classbegindate,cobalt_classenddate,cobalt_classid,cobalt_locationid,cobalt_name,cobalt_description,cobalt_locationid,cobalt_cobalt_tag_cobalt_class/cobalt_name,cobalt_fullday,cobalt_publishtoportal,statuscode,cobalt_cobalt_classinstructor_cobalt_class/cobalt_name,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_productid,cobalt_cobalt_class_cobalt_classregistrationfee/statuscode,cobalt_outsideprovider,cobalt_outsideproviderlink'
     }
 
     response = requests.post(api_url, data=form_data)
@@ -184,7 +180,7 @@ def push_classes():
             }
 
             if isinstance(location_id, (int, float)):
-                ramcoClass["venue"] = data[0]['cobalt_LocationId']
+                ramcoClass["venue"] = data['cobalt_LocationId']
 
             payload = urlencode(ramcoClass)
 

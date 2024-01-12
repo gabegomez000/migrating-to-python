@@ -69,19 +69,14 @@ payload = {
     'Key': config['API_KEY'],
     'Operation': 'GetEntities',
     'Entity': 'cobalt_class',
-    'Filter': f'createdon<ge>{date_start} AND statuscode<eq>1',
+    'Filter': f'createdon<ge>2023-11-15T00:00:00 AND statuscode<eq>1',
     'Attributes': 'cobalt_classbegindate,cobalt_classenddate,cobalt_classid,cobalt_locationid,cobalt_name,cobalt_description,cobalt_locationid,cobalt_cobalt_tag_cobalt_class/cobalt_name,cobalt_fullday,cobalt_publishtoportal,statuscode,cobalt_cobalt_classinstructor_cobalt_class/cobalt_name,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_productid,cobalt_cobalt_class_cobalt_classregistrationfee/statuscode,cobalt_outsideprovider,cobalt_outsideproviderlink,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_publishtoportal'
 }
 
 #request data from RAMCO API
 response = requests.post(config['API_URL'], data=payload)
 body = json.loads(response.text)
-
-if 'Data' not in body:
-    console_logger.debug("No new classes to process")
-    exit()
-else:  
-    classes = body['Data']
+classes = body['Data']
 
 #loop through classes
 def process_classes(classes):
@@ -255,6 +250,8 @@ console_logger.debug(f"Existing Classes: {len(existing_classes)}")
 console_logger.debug(f"Featured Classes: {len(featured_classes)}")
 console_logger.debug(f"New Classes: {len(new_classes)}")
 
+console_logger.debug(new_classes)
+
 async def submit_new_class(data):
     console_logger.debug(f"Submitting new class: {data['cobalt_name']} - {data['cobalt_classId']}")
     ramcoClass = {
@@ -291,8 +288,8 @@ async def submit_new_class(data):
     if response.status_code == 200:
         console_logger.debug("Class added successfully!")
     else:
-        console_logger.error(response.text)
-        send_slack_message(response.text)
+        console_logger.error(response)
+        #send_slack_message(response.text)
 
     #print(response)
 
