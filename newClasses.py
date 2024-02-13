@@ -162,7 +162,8 @@ def process_classes(classes):
             "Northwestern Dade": ("#9e182f", 4735),
             "Northwestern Dade Office": ("#9e182f", 4735),
             "NE Broward Office-Ft. Lauderdale": ("#f26722", 4702),
-            "Aventura Office": ("#000000", 22099)
+            "Aventura Office": ("#000000", 22099),
+            "null": ("", "")
         }
 
         #set default style and location id

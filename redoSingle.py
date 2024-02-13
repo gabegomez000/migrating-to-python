@@ -120,7 +120,8 @@ location_mapping = {
     "Northwestern Dade": ("#9e182f", 4735),
     "Northwestern Dade Office": ("#9e182f", 4735),
     "NE Broward Office-Ft. Lauderdale": ("#f26722", 4702),
-    "Aventura Office": ("#000000", 22099)
+    "Aventura Office": ("#000000", 22099),
+    "null": ("", ""),
 }
 
 default_style = ""  # Default style value
@@ -152,16 +153,20 @@ existing_classes = []
 new_classes = []
 
 def check_if_exists():
-    response = requests.get(f"{config['WORDPRESS_URL']}/by-slug/{data['cobalt_classId']}")
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
+    }
+    response = requests.get(f"{config['WORDPRESS_URL']}/by-slug/{data['cobalt_classId']}", headers=headers)
     return response
 
 response = check_if_exists()
 
+print(response.status_code)
+
 if response.status_code == 200:
 
     response = response.json()
-
-    #console_logger.debug(response)
 
     response_tags = [response['name'] for response in response['tags']]
     all_tags = data['cobalt_cobalt_tag_cobalt_class'] + response_tags
@@ -185,7 +190,7 @@ if response.status_code == 200:
 else:
     new_classes.append(data)
 
-# print(featured_classes)
+print(f'Featured: {len(featured_classes)} Existing: {len(existing_classes)}' )
 
 def modify_existing_class(data):
     #console_logger.debug(data)
@@ -260,8 +265,6 @@ def modify_featured_class(data):
 
     console_logger.debug(body)
     print(f"Class processed: {data[0]['cobalt_name']}")
-
-print(existing_classes)
 
 if len(existing_classes) > 0:
     modify_existing_class(existing_classes)

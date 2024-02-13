@@ -70,7 +70,7 @@ payload = {
     'Operation': 'GetEntities',
     'Entity': 'cobalt_class',
     'Filter': f'modifiedon<ge>{date_start}',
-    'Attributes': 'cobalt_classbegindate,cobalt_classenddate,cobalt_classid,cobalt_locationid,cobalt_name,cobalt_description,cobalt_locationid,cobalt_cobalt_tag_cobalt_class/cobalt_name,cobalt_fullday,cobalt_publishtoportal,statuscode,cobalt_cobalt_classinstructor_cobalt_class/cobalt_name,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_productid,cobalt_cobalt_class_cobalt_classregistrationfee/statuscode,cobalt_outsideprovider,cobalt_outsideproviderlink,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_publishtoportal'
+    'Attributes': 'cobalt_classbegindate,cobalt_classenddate,cobalt_classid,cobalt_locationid,cobalt_name,cobalt_description,cobalt_locationid,cobalt_cobalt_tag_cobalt_class/cobalt_name,cobalt_fullday,cobalt_publishtoportal,statuscode,cobalt_cobalt_classinstructor_cobalt_class/cobalt_name,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_productid,cobalt_cobalt_class_cobalt_classregistrationfee/statuscode,cobalt_outsideprovider,cobalt_outsideproviderlink,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_publishtoportal,ramcosub_calendar_override'
 }
 
 #request data from RAMCO API
@@ -194,38 +194,42 @@ except Exception as e:
 new_classes = []
 featured_classes = []
 existing_classes = []
+class_shadowrealm = []
 
 #check if class exists
 def check_if_exists(classes):
     for obj in classes:
-        response = requests.get(f"{config['WORDPRESS_URL']}/by-slug/{obj['cobalt_classId']}")
+        if obj['ramcosub_calendar_override'] == 'false':
+            response = requests.get(f"{config['WORDPRESS_URL']}/by-slug/{obj['cobalt_classId']}")
 
-        #print(response)
+            #print(response)
 
-        if response.status_code == 200:
+            if response.status_code == 200:
 
-            response = response.json()
+                response = response.json()
 
-            response_tags = [response['name'] for response in response['tags']]
-            all_tags = obj['cobalt_cobalt_tag_cobalt_class'] + response_tags
+                response_tags = [response['name'] for response in response['tags']]
+                all_tags = obj['cobalt_cobalt_tag_cobalt_class'] + response_tags
 
-            obj['sticky']= response['sticky']
-            obj['featured']= response['featured']
+                obj['sticky']= response['sticky']
+                obj['featured']= response['featured']
 
-            console_logger.debug(response['url'])
-            filtered_tags = list(set(all_tags))
+                console_logger.debug(response['url'])
+                filtered_tags = list(set(all_tags))
 
-            if response["image"] == False:
-                obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
-                console_logger.debug("No class image!")
-                existing_classes.append(obj)
+                if response["image"] == False:
+                    obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
+                    console_logger.debug("No class image!")
+                    existing_classes.append(obj)
+                else:
+                    obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
+                    obj['featuredImage'] = response['image']['url']
+                    console_logger.debug(response['image']['url'])
+                    featured_classes.append(obj)
             else:
-                obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
-                obj['featuredImage'] = response['image']['url']
-                console_logger.debug(response['image']['url'])
-                featured_classes.append(obj)
+                new_classes.append(obj)
         else:
-            new_classes.append(obj)
+            class_shadowrealm.append(obj)
 
 #get response
 
