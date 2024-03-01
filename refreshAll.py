@@ -25,7 +25,7 @@ logging_config = {
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': 'logs/newClasses.log',
+            'filename': 'logs/incremental.log',
             'level': 'DEBUG',
             'formatter': 'simple'
         }
@@ -82,6 +82,7 @@ response = requests.post(config['API_URL'], data=payload)
 body = json.loads(response.text)
 classes = body['Data']
 
+
 #loop through classes
 def process_classes(classes):
     #
@@ -94,6 +95,8 @@ def process_classes(classes):
     venueSearch = json.load(open('./venues.json', 'r'))
     
     for obj in classes:
+
+        print(f"Processing: {obj['cobalt_name']} - {obj['cobalt_classId']}")
 
         #format start date
         startDate = datetime.datetime.fromtimestamp(obj['cobalt_ClassBeginDate']['Value'])
@@ -111,21 +114,32 @@ def process_classes(classes):
                 'status': item['statuscode']['Value'],
             })
         
+        print(f"Order Ids: {orderIds}")
+
         #remove order ids
         orderIds = [item for item in orderIds if item['id'] != '8d6bb524-f1d8-41ad-8c21-ae89d35d4dc3']
         orderIds = [item for item in orderIds if item['id'] != 'c3102913-ffd4-49d6-9bf6-5f0575b0b635']
         orderIds = [item for item in orderIds if item['id'] != None]
         orderIds = [item for item in orderIds if item['status'] == 1]
 
+        print(f"Order Ids: {orderIds}")
+
         #set price
         if len(orderIds) > 0:
             cost = [item for item in prices if item['ProductId'] == orderIds[0]['id']]
-            obj['cobalt_price'] = cost[0]['Price']
+            print(f"Cost: {cost}")
+            if cost[0]['Price'] == None:
+                obj['cobalt_price'] = ''
+            else:
+                obj['cobalt_price'] = cost[0]['Price']
         else:
             obj['cobalt_price'] = '0.0000'
 
+        print(f"Price: {obj['cobalt_price']}")
+
         #remove decimals
-        obj['cobalt_price'] = obj['cobalt_price'][:-2]
+        if obj['cobalt_price'] != '':
+            obj['cobalt_price'] = obj['cobalt_price'][:-2]
 
         #set price to blank if outside provider
         if obj['cobalt_OutsideProvider'] == 'true':
@@ -252,7 +266,6 @@ featured_classes = []
 existing_classes = []
 class_shadowrealm = []
 
-#check if class exists
 def check_if_exists(classes):
     for obj in classes:
         if obj['ramcosub_calendar_override'] == 'false':
@@ -315,22 +328,56 @@ else:
     try:
         check_if_exists(classes)
     except Exception as e:
+        sendDiscordAlert(e)
         console_logger.error(e)
 
-#check if class exists
-# print(existing_classes)
-# print(featured_classes)
-#print(new_classes)
-
-#print amount of classes in each array
 print(f"Existing Classes: {len(existing_classes)}")
 print(f"Featured Classes: {len(featured_classes)}")
 print(f"New Classes: {len(new_classes)}")
+print(f"Shadowrealm Classes: {len(class_shadowrealm)}")
 
-console_logger.debug(new_classes)
+async def submit_existing_class(data):
+        #console_logger.debug(data)
 
-async def submit_new_class(data):
-    console_logger.debug(f"Submitting new class: {data['cobalt_name']} - {data['cobalt_classId']}")
+    print(f"Submitting existing class: {data['cobalt_classId']} - {data['cobalt_LocationId']} - {data['cobalt_name']} - {data['cobalt_price']} - {data['cobalt_cobalt_tag_cobalt_class']}")
+
+    ramco_class = {
+        "title": data['cobalt_name'],
+        "status": "publish",
+        "hide_from_listings": data['publish'],
+        "description": data['cobalt_Description'],
+        "all_day": data['all_day'],
+        "start_date": data['cobalt_ClassBeginDate']['Display'],
+        "end_date": data['cobalt_ClassEndDate']['Display'],
+        "slug": data['cobalt_classId'],
+        "categories": data['cobalt_cobalt_tag_cobalt_class'],
+        "show_map_link": True,
+        "show_map": True,
+        "cost": data['cobalt_price'],
+        "tags": data['cobalt_cobalt_tag_cobalt_class'],
+        "featured": data['featured'],
+        "sticky": data['sticky']
+    }
+
+    console_logger.debug(ramco_class)
+
+    if data['cobalt_LocationId'] != []:
+        ramco_class["venue"] = data['cobalt_LocationId']
+
+    #payload = urlencode(ramco_class)
+    print(payload)
+    url = f"{config['WORDPRESS_URL']}/events/by-slug/{data['cobalt_classId']}"
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
+    }
+    response = requests.post(url, headers=headers, params=ramco_class)
+    body = response.json()
+    print(body)
+    print(f"Class processed: {data['cobalt_name']}")
+
+async def submit_featured_class(data):
+    print(f"Submitting featured class: {data['cobalt_classId']} - {data['cobalt_LocationId']}")
     ramcoClass = {
                 "title": data['cobalt_name'],
                 "status": "publish",
@@ -340,37 +387,47 @@ async def submit_new_class(data):
                 "start_date": data['cobalt_ClassBeginDate']['Display'],
                 "end_date": data['cobalt_ClassEndDate']['Display'],
                 "slug": data['cobalt_classId'],
-                "categories": data['categories'],
+                "categories": data['cobalt_cobalt_tag_cobalt_class'],
                 "show_map_link": True,
                 "show_map": True,
+                "featured": data['featured'],
+                "sticky": data['sticky'],
                 "cost": data['cobalt_price'],
-                "tags": data['cobalt_cobalt_tag_cobalt_class']
+                "tags": data['cobalt_cobalt_tag_cobalt_class'],
+                "image": data['featuredImage']
             }
     
     if data['cobalt_LocationId'] != []:
         ramcoClass["venue"] = data['cobalt_LocationId']
 
-    #payload = urlencode(ramco_class)
-    #print(ramcoClass)
-    url = f"{config['WORDPRESS_URL']}/events"
+
+    #set url and headers
+    payload = urlencode(ramcoClass)
+    
+    url = f"{config['WORDPRESS_URL']}/events/by-slug/{data['cobalt_classId']}"
     headers = {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
     }
-
-    #post data
-    response = requests.post(url, headers=headers, params=ramcoClass)
+    response = requests.post(url, headers=headers, data=payload)
     
     if response.status_code == 200:
-        print(f"Class processed: {data['cobalt_name']}")
+        print(f"Featured class processed: {data['cobalt_name']}")
+        print(response.text)
     else:
-        print(f'Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}')
-        #send_slack_message(response.text)
+        console_logger.error(response.text)
+        send_slack_message(response.text)
+
 
     #print(response)
 
-async def sumbit_classes(data):
+async def sumbit_e_classes(data):
     for obj in data:
-        await submit_new_class(obj)
+        await submit_existing_class(obj)
 
-asyncio.run(sumbit_classes(new_classes))
+async def sumbit_f_classes(data):
+    for obj in data:
+        await submit_featured_class(obj)
+
+#asyncio.run(sumbit_e_classes(existing_classes))
+asyncio.run(sumbit_f_classes(featured_classes))
