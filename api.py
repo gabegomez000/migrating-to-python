@@ -12,15 +12,11 @@ def redoClass(guid):
 
     if guid_regex.match(guid) is None:
         return "Invalid GUID format", 400
-    
-    staging = request.args.get('staging')
-    if staging is None:
-        return "Staging parameter is required", 400
-    staging = staging.lower()
 
     try:
-        response = redoSingleModule(guid, staging)
-        #print("response: ", response)
+        response = redoSingleModule(guid, "true")
+        response2 = redoSingleModule(guid, "false")
+        response = f"{response} {response2}"
         return {"message": response}
     except Exception as e:
         return {"message": f"An error occurred: {str(e)}"}, 500
@@ -32,15 +28,11 @@ def newClass(guid):
 
     if guid_regex.match(guid) is None:
         return "Invalid GUID format", 400
-    
-    staging = request.args.get('staging')
-    if staging is None:
-        return "Staging parameter is required", 400
-    staging = staging.lower()
 
     try:
-        response = newClassSingle(guid, staging)
-        #print("response: ", response)
+        response = newClassSingle(guid, "true")
+        response2 = newClassSingle(guid, "false")
+        response = f"{response} {response2}"
         return {"message": response}
     except Exception as e:
         return {"message": f"An error occurred: {str(e)}"}, 500
