@@ -1,10 +1,4 @@
-import requests
-import os
-import json
-import datetime
-import base64
-import asyncio
-from urllib.parse import urlencode
+import requests, os, json, datetime, base64, asyncio
 from dotenv import dotenv_values
 from pricelist import pricelist, getTags, getCategories, getVenues
 from alerts import sendDiscordAlert
@@ -41,15 +35,6 @@ logging_config = {
         'handlers': ['Console', 'file'],
     },
 }
-
-def send_slack_message(message):
-    payload = {
-        "text": message
-    }
-    headers = {
-        "Content-Type": "application/json"
-    }
-    response = requests.post(config["SLACK_WEBHOOK"], headers=headers, data=json.dumps(payload))
 
 logging.config.dictConfig(logging_config)
 console_logger = logging.getLogger('Console')

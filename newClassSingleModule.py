@@ -1,16 +1,10 @@
-import requests
-import os
-import json
-import datetime
-import base64
-import asyncio
+import requests, json, datetime, pytz, os, base64, logging
+from datetime import datetime
 from urllib.parse import urlencode
 from dotenv import dotenv_values
 from pricelist import pricelist, getTags, getCategories, getVenues
 from alerts import sendDiscordAlert
-import logging.config
 
-#import env variables
 config = dotenv_values(".env")
 
 #setup logging
@@ -25,7 +19,7 @@ logging_config = {
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': 'logs/newClasses.log',
+            'filename': 'logs/redoSingle.log',
             'level': 'DEBUG',
             'formatter': 'simple'
         }
@@ -42,65 +36,55 @@ logging_config = {
     },
 }
 
-def send_slack_message(message):
-    payload = {
-        "text": message
-    }
-    headers = {
-        "Content-Type": "application/json"
-    }
-    response = requests.post(config["SLACK_WEBHOOK"], headers=headers, data=json.dumps(payload))
-
 logging.config.dictConfig(logging_config)
 console_logger = logging.getLogger('Console')
 
-# set up wordpress url if staging is true in env
-if os.environ.get('STAGING') == 'true':
-    config['WORDPRESS_URL'] = config['STAGING_URL']
+def newClassSingle(guid, staging):
 
-#update pricelist
-pricelist()
-getTags(config['WORDPRESS_URL'])
-getCategories(config['WORDPRESS_URL'])
-getVenues(config['WORDPRESS_URL'])
+    # set up wordpress url if staging is true in env
+    if staging == 'true':
+        config['WORDPRESS_URL'] = config['STAGING_URL']
 
-#get date minus 1 hour
-date_start = datetime.datetime.now() - datetime.timedelta(hours=1)
-date_start = date_start.strftime("%Y-%m-%dT%H:00:00")
-
-# #build api request
-payload = {
-    'Key': config['API_KEY'],
-    'Operation': 'GetEntities',
-    'Entity': 'cobalt_class',
-    'Filter': f'cobalt_classbegindate<ge>{date_start}',
-    'Attributes': 'cobalt_classbegindate,cobalt_classenddate,cobalt_classid,cobalt_locationid,cobalt_name,cobalt_description,cobalt_locationid,cobalt_cobalt_tag_cobalt_class/cobalt_name,cobalt_fullday,cobalt_publishtoportal,statuscode,cobalt_cobalt_classinstructor_cobalt_class/cobalt_name,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_productid,cobalt_cobalt_class_cobalt_classregistrationfee/statuscode,cobalt_outsideprovider,cobalt_outsideproviderlink,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_publishtoportal,ramcosub_calendar_override'
-}
-
-#request data from RAMCO API
-response = requests.post(config['API_URL'], data=payload)
-body = json.loads(response.text)
-classes = body['Data']
-
-#loop through classes
-def process_classes(classes):
-    #
-    #   load pricelist and class attribute data
-    #
+    # get the pricelist
+    pricelist()
+    getTags(config['WORDPRESS_URL'])
+    getCategories(config['WORDPRESS_URL'])
+    getVenues(config['WORDPRESS_URL'])
 
     prices = json.load(open('./pricelist.json', 'r'))
     tagSearch = json.load(open('./tags.json', 'r'))
     catSearch = json.load(open('./categories.json', 'r'))
     venueSearch = json.load(open('./venues.json', 'r'))
-    
-    for obj in classes:
+
+    form_data = {
+        'Key': config['API_KEY'],
+        'Operation': 'GetEntity',
+        'Entity': 'cobalt_class',
+        'Guid': guid,
+        'Attributes': 'cobalt_classbegindate,cobalt_classenddate,cobalt_classid,cobalt_locationid,cobalt_name,cobalt_description,cobalt_locationid,cobalt_cobalt_tag_cobalt_class/cobalt_name,cobalt_fullday,cobalt_publishtoportal,statuscode,cobalt_cobalt_classinstructor_cobalt_class/cobalt_name,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_productid,cobalt_cobalt_class_cobalt_classregistrationfee/statuscode,cobalt_outsideprovider,cobalt_outsideproviderlink,ramcosub_calendar_override'
+    }
+
+    try:
+        response = requests.post(config['API_URL'], data=form_data)
+        body = json.loads(response.text)
+        data = body['Data']
+    except Exception as e:
+        sendDiscordAlert(f"Error: {e}")
+        return e
+
+    def process_classes(obj):
+        #
+        #   load pricelist and class attribute data
+        #
+
+        #print(obj['cobalt_ClassBeginDate']['Value'])
 
         #format start date
-        startDate = datetime.datetime.fromtimestamp(obj['cobalt_ClassBeginDate']['Value'])
+        startDate = datetime.fromtimestamp(obj['cobalt_ClassBeginDate']['Value'])
         obj['cobalt_ClassBeginDate']['Display'] = startDate.strftime("%Y-%m-%d %H:%M:%S")
 
         #format end date
-        endDate = datetime.datetime.fromtimestamp(obj['cobalt_ClassEndDate']['Value'])
+        endDate = datetime.fromtimestamp(obj['cobalt_ClassEndDate']['Value'])
         obj['cobalt_ClassEndDate']['Display'] = endDate.strftime("%Y-%m-%d %H:%M:%S")
 
         #get order ids
@@ -248,24 +232,23 @@ def process_classes(classes):
 
         print(f"Class processed: {obj['cobalt_name']} - {obj['cobalt_classId']} - {obj['cobalt_LocationId']} - {obj['cobalt_price']} - {obj['cobalt_cobalt_tag_cobalt_class']}")
 
-try:
-    process_classes(classes)
-except Exception as e:
-    console_logger.error(e)
-    sendDiscordAlert(e)
+    try:
+        process_classes(data)
+    except Exception as e:
+        sendDiscordAlert(f"Error: {e}")
+        console_logger.debug(f"Error: {e}")
+        return e
 
-new_classes = []
-featured_classes = []
-existing_classes = []
-class_shadowrealm = []
+    new_classes = []
+    featured_classes = []
+    existing_classes = []
+    class_shadowrealm = []
 
-#check if class exists
-def check_if_exists(classes):
-    for obj in classes:
+    def check_if_exists(obj):
         if obj['ramcosub_calendar_override'] == 'false':
             response = requests.get(f"{config['WORDPRESS_URL']}/events/by-slug/{obj['cobalt_classId']}")
 
-            print(f'Checking {obj['cobalt_name']} - {obj['cobalt_classId']} - {response.status_code}')
+            print(f"Checking {obj['cobalt_name']} - {obj['cobalt_classId']} - {response.status_code}")
 
             if response.status_code == 200:
 
@@ -310,74 +293,61 @@ def check_if_exists(classes):
             else:
                 new_classes.append(obj)
         else:
-            print(f'Sending {obj['cobalt_name']} - {obj['cobalt_classId']} to the shadowrealm')
+            print(f"Sending {obj['cobalt_name']} - {obj['cobalt_classId']} to the shadowrealm")
             class_shadowrealm.append(obj)
 
-#get response
-
-if len(classes) == 0:
-    console_logger.debug("No new classes to process")
-    exit()
-else:
     try:
-        check_if_exists(classes)
+        check_if_exists(data)
     except Exception as e:
-        console_logger.error(e)
+        sendDiscordAlert(f"Error: {e}")
+        console_logger.debug(f"Error: {e}")
+        return e
 
-#check if class exists
-# print(existing_classes)
-# print(featured_classes)
-#print(new_classes)
+    def submit_new_class(data):
+        console_logger.debug(f"Submitting new class: {data['cobalt_name']} - {data['cobalt_classId']}")
+        ramcoClass = {
+                    "title": data['cobalt_name'],
+                    "status": "publish",
+                    "hide_from_listings": data['publish'],
+                    "description": data['cobalt_Description'],
+                    "all_day": data['all_day'],
+                    "start_date": data['cobalt_ClassBeginDate']['Display'],
+                    "end_date": data['cobalt_ClassEndDate']['Display'],
+                    "slug": data['cobalt_classId'],
+                    "categories": data['categories'],
+                    "show_map_link": True,
+                    "show_map": True,
+                    "cost": data['cobalt_price'],
+                    "tags": data['cobalt_cobalt_tag_cobalt_class']
+                }
+        
+        if data['cobalt_LocationId'] != []:
+            ramcoClass["venue"] = data['cobalt_LocationId']
 
-#print amount of classes in each array
-print(f"Existing Classes: {len(existing_classes)}")
-print(f"Featured Classes: {len(featured_classes)}")
-print(f"New Classes: {len(new_classes)}")
+        #payload = urlencode(ramco_class)
+        #console_logger.debug(ramcoClass)
+        url = f"{config['WORDPRESS_URL']}/events"
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
+        }
 
-console_logger.debug(new_classes)
-
-async def submit_new_class(data):
-    console_logger.debug(f"Submitting new class: {data['cobalt_name']} - {data['cobalt_classId']}")
-    ramcoClass = {
-                "title": data['cobalt_name'],
-                "status": "publish",
-                "hide_from_listings": data['publish'],
-                "description": data['cobalt_Description'],
-                "all_day": data['all_day'],
-                "start_date": data['cobalt_ClassBeginDate']['Display'],
-                "end_date": data['cobalt_ClassEndDate']['Display'],
-                "slug": data['cobalt_classId'],
-                "categories": data['categories'],
-                "show_map_link": True,
-                "show_map": True,
-                "cost": data['cobalt_price'],
-                "tags": data['cobalt_cobalt_tag_cobalt_class']
-            }
+        #post data
+        response = requests.post(url, headers=headers, params=ramcoClass)
+        
+        if response.status_code == 200:
+            return f"Class submitted: {data['cobalt_name']}"
+            console_logger.debug(f"Class processed: {data['cobalt_name']}")
+        else:
+            console_logger.debug(f"Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}")
+            sendDiscordAlert(f"Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}")
     
-    if data['cobalt_LocationId'] != []:
-        ramcoClass["venue"] = data['cobalt_LocationId']
-
-    #payload = urlencode(ramco_class)
-    #print(ramcoClass)
-    url = f"{config['WORDPRESS_URL']}/events"
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
-    }
-
-    #post data
-    response = requests.post(url, headers=headers, params=ramcoClass)
-    
-    if response.status_code == 200:
-        print(f"Class processed: {data['cobalt_name']}")
+    if new_classes == []:
+        return "No new classes to process"
     else:
-        print(f'Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}')
-        #send_slack_message(response.text)
-
-    #print(response)
-
-async def sumbit_classes(data):
-    for obj in data:
-        await submit_new_class(obj)
-
-asyncio.run(sumbit_classes(new_classes))
+        try:
+            submit_new_class(new_classes)
+        except Exception as e:
+            sendDiscordAlert(f"Error: {e}")
+            console_logger.debug(f"Error: {e}")
+            return e
