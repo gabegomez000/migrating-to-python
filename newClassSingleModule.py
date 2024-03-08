@@ -44,6 +44,9 @@ def newClassSingle(guid, staging):
     # set up wordpress url if staging is true in env
     if staging == 'true':
         config['WORDPRESS_URL'] = config['STAGING_URL']
+        print(f"Set Staging URL: {config['WORDPRESS_URL']}")
+    else:
+        print(f"Set Live URL: {config['WORDPRESS_URL']}")
 
     # get the pricelist
     pricelist()
