@@ -4,10 +4,9 @@ from dotenv import dotenv_values
 from pricelist import pricelist, getTags, getCategories, getVenues
 from alerts import sendDiscordAlert
 
-#import env variables
-config = dotenv_values(".env")
-
 def redoSingleModule(guid, staging):
+
+    config = dotenv_values(".env")
 
     # set up wordpress url if staging is true in env
     if staging == True:

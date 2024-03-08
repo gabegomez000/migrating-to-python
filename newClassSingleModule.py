@@ -5,8 +5,6 @@ from dotenv import dotenv_values
 from pricelist import pricelist, getTags, getCategories, getVenues
 from alerts import sendDiscordAlert
 
-config = dotenv_values(".env")
-
 #setup logging
 logging_config = {
     'version': 1,
@@ -40,6 +38,8 @@ logging.config.dictConfig(logging_config)
 console_logger = logging.getLogger('Console')
 
 def newClassSingle(guid, staging):
+
+    config = dotenv_values(".env")
 
     # set up wordpress url if staging is true in env
     if staging == True:
