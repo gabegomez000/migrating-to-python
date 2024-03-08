@@ -10,9 +10,11 @@ config = dotenv_values(".env")
 def redoSingleModule(guid, staging):
 
     # set up wordpress url if staging is true in env
-    if staging == 'true':
+    if staging == "true":
         config['WORDPRESS_URL'] = config['STAGING_URL']
         print(f"Set Staging URL: {config['WORDPRESS_URL']}")
+    elif staging == "false":
+        print(f"Set Live URL: {config['WORDPRESS_URL']}")
 
     #update pricelist
     pricelist()

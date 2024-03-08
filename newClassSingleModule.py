@@ -42,10 +42,10 @@ console_logger = logging.getLogger('Console')
 def newClassSingle(guid, staging):
 
     # set up wordpress url if staging is true in env
-    if staging == 'true':
+    if staging == "true":
         config['WORDPRESS_URL'] = config['STAGING_URL']
         print(f"Set Staging URL: {config['WORDPRESS_URL']}")
-    else:
+    elif staging == "false":
         print(f"Set Live URL: {config['WORDPRESS_URL']}")
 
     # get the pricelist
