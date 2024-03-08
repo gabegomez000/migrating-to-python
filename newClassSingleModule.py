@@ -105,7 +105,7 @@ def newClassSingle(guid, staging):
         #set price
         if len(orderIds) > 0:
             cost = [item for item in prices if item['ProductId'] == orderIds[0]['id']]
-            console_logger.debug(f"Cost: {cost}")
+            print(f"Cost: {cost}")
             if cost[0]['Price'] == None:
                 obj['cobalt_price'] = ''
             else:
@@ -113,7 +113,7 @@ def newClassSingle(guid, staging):
         else:
             obj['cobalt_price'] = '0.0000'
 
-        console_logger.debug(f"Price: {obj['cobalt_price']}")
+        print(f"Price: {obj['cobalt_price']}")
 
         #remove decimals
         if obj['cobalt_price'] != '':
@@ -184,7 +184,7 @@ def newClassSingle(guid, staging):
         elif cobalt_location_id is None or cobalt_location_id == "null" or cobalt_location_id == "":
             obj['cobalt_LocationId'] = []
         else:
-            console_logger.debug(f"Venue not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {cobalt_location_id}")
+            print(f"Venue not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {cobalt_location_id}")
             obj['cobalt_LocationId'] = []
 
         #
@@ -238,7 +238,6 @@ def newClassSingle(guid, staging):
     except Exception as e:
         sendDiscordAlert(f"Error: {e}")
         print(f"Error: {e}")
-        console_logger.debug(f"Error: {e}")
         return e
 
     new_classes = []
@@ -303,11 +302,10 @@ def newClassSingle(guid, staging):
     except Exception as e:
         sendDiscordAlert(f"Error: {e}")
         print(f"Error: {e}")
-        console_logger.debug(f"Error: {e}")
         return e
 
     def submit_new_class(data):
-        console_logger.debug(f"Submitting new class: {data['cobalt_name']} - {data['cobalt_classId']}")
+        print(f"Submitting new class: {data['cobalt_name']} - {data['cobalt_classId']}")
         ramcoClass = {
                     "title": data['cobalt_name'],
                     "status": "publish",
@@ -328,7 +326,7 @@ def newClassSingle(guid, staging):
             ramcoClass["venue"] = data['cobalt_LocationId']
 
         #payload = urlencode(ramco_class)
-        #console_logger.debug(ramcoClass)
+        #print(ramcoClass)
         url = f"{config['WORDPRESS_URL']}/events"
         headers = {
             'Content-Type': 'application/json',
@@ -340,9 +338,9 @@ def newClassSingle(guid, staging):
         
         if response.status_code == 200:
             return f"Class submitted: {data['cobalt_name']}"
-            console_logger.debug(f"Class processed: {data['cobalt_name']}")
+            print(f"Class processed: {data['cobalt_name']}")
         else:
-            console_logger.debug(f"Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}")
+            print(f"Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}")
             sendDiscordAlert(f"Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}")
     
     if new_classes == []:
@@ -353,5 +351,4 @@ def newClassSingle(guid, staging):
         except Exception as e:
             sendDiscordAlert(f"Error: {e}")
             print(f"Error: {e}")
-            console_logger.debug(f"Error: {e}")
             return e
