@@ -70,6 +70,7 @@ def newClassSingle(guid, staging):
         data = body['Data']
     except Exception as e:
         sendDiscordAlert(f"Error: {e}")
+        print(f"Error: {e}")
         return e
 
     def process_classes(obj):
@@ -236,6 +237,7 @@ def newClassSingle(guid, staging):
         process_classes(data)
     except Exception as e:
         sendDiscordAlert(f"Error: {e}")
+        print(f"Error: {e}")
         console_logger.debug(f"Error: {e}")
         return e
 
@@ -300,6 +302,7 @@ def newClassSingle(guid, staging):
         check_if_exists(data)
     except Exception as e:
         sendDiscordAlert(f"Error: {e}")
+        print(f"Error: {e}")
         console_logger.debug(f"Error: {e}")
         return e
 
@@ -346,8 +349,9 @@ def newClassSingle(guid, staging):
         return "No new classes to process"
     else:
         try:
-            submit_new_class(new_classes)
+            submit_new_class(new_classes[0])
         except Exception as e:
             sendDiscordAlert(f"Error: {e}")
+            print(f"Error: {e}")
             console_logger.debug(f"Error: {e}")
             return e

@@ -38,8 +38,8 @@ def redoSingleModule(guid, staging):
     try:
         r = requests.post(config['API_URL'], data=payload)
     except Exception as e:
-        print(f"Error: {e}")
         sendDiscordAlert(f"Error: {e}")
+        print(f"Error: {e}")
         return e
 
     # Parse the data
@@ -190,8 +190,8 @@ def redoSingleModule(guid, staging):
     try:
         processClass(obj)
     except Exception as e:
-        print(f"Error: {e}")
         sendDiscordAlert(f"Error: {e}")
+        print(f"Error: {e}")
         return e
 
     featured_classes = []
@@ -255,8 +255,8 @@ def redoSingleModule(guid, staging):
     try:
         check_if_exists(obj)
     except Exception as e:
-        print(f"Error: {e}")
         sendDiscordAlert(f"Error: {e}")
+        print(f"Error: {e}")
         return e
 
     print(f'Featured: {len(featured_classes)} Existing: {len(existing_classes)} New: {len(new_classes)} Shadowrealm: {len(class_shadowrealm)}' )
