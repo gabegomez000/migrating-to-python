@@ -14,8 +14,8 @@ def redoClass(guid):
         return "Invalid GUID format", 400
 
     try:
-        response = redoSingleModule(guid, "true")
-        response2 = redoSingleModule(guid, "false")
+        response = redoSingleModule(guid, True)
+        response2 = redoSingleModule(guid, False)
         response = f"{response} {response2}"
         return {"message": response}
     except Exception as e:
@@ -30,8 +30,8 @@ def newClass(guid):
         return "Invalid GUID format", 400
 
     try:
-        response = newClassSingle(guid, "true")
-        response2 = newClassSingle(guid, "false")
+        response = newClassSingle(guid, True)
+        response2 = newClassSingle(guid, False)
         response = f"{response} {response2}"
         return {"message": response}
     except Exception as e:
