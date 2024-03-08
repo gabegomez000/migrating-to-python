@@ -226,6 +226,12 @@ def getVenues(url):
         'slug': 'NE Broward Office Ft. Lauderdale'
     })
 
+    venuesLite.append({
+        'id': 4718,
+        'name': 'JTHS MIAMI Boardroom',
+        'slug': 'JTHS MIAMI Boardroom'
+    })
+
     # print(data)
 
     # Save the data to a file
