@@ -278,9 +278,13 @@ def newClassSingle(guid, staging):
 
                 for tag in filtered_tags:
                     tagFix += f"{tag},"
+
+                tagFix = tagFix[:-1]
                 
                 for cat in filtered_categories:
                     catFix += f"{cat},"
+
+                catFix = catFix[:-1]
 
                 obj['cobalt_cobalt_tag_cobalt_class'] = tagFix
                 obj['categories'] = catFix
@@ -339,12 +343,13 @@ def newClassSingle(guid, staging):
         #post data
         response = requests.post(url, headers=headers, params=ramcoClass)
         
-        if response.status_code == 200:
+        if response.status_code == 201:
             return f"Class submitted: {data['cobalt_name']}"
             print(f"Class processed: {data['cobalt_name']}")
         else:
             print(f"Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}")
             sendDiscordAlert(f"Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}")
+            return f"Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}"
     
     if new_classes == []:
         return "No new classes to process"
