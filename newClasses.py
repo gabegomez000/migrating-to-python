@@ -358,11 +358,11 @@ async def submit_new_class(data):
     #post data
     response = requests.post(url, headers=headers, params=ramcoClass)
     
-    if response.status_code == 200:
+    if response.status_code == 201:
         console_logger.debug(f"Class processed: {data['cobalt_name']}")
     else:
         console_logger.debug(f'Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}')
-        send_slack_message(f'Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}')
+        sendDiscordAlert(f'Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}')
 
     #console_logger.debug(response)
 
