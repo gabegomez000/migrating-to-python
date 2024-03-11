@@ -297,9 +297,11 @@ def check_if_exists(classes):
 
                 for tag in filtered_tags:
                     tagFix += f"{tag},"
+                tagFix = tagFix[:-1]
                 
                 for cat in filtered_categories:
                     catFix += f"{cat},"
+                catFix = catFix[:-1]
 
                 obj['cobalt_cobalt_tag_cobalt_class'] = tagFix
                 obj['categories'] = catFix
@@ -429,5 +431,5 @@ async def sumbit_f_classes(data):
     for obj in data:
         await submit_featured_class(obj)
 
-#asyncio.run(sumbit_e_classes(existing_classes))
+asyncio.run(sumbit_e_classes(existing_classes))
 asyncio.run(sumbit_f_classes(featured_classes))

@@ -350,7 +350,7 @@ async def submit_existing_class(data):
         "start_date": data['cobalt_ClassBeginDate']['Display'],
         "end_date": data['cobalt_ClassEndDate']['Display'],
         "slug": data['cobalt_classId'],
-        "categories": data['catergories'],
+        "categories": data['categories'],
         "show_map_link": True,
         "show_map": True,
         "cost": data['cobalt_price'],
