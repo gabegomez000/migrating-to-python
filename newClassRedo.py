@@ -120,7 +120,7 @@ def process_classes(classes):
         #set price
         if len(orderIds) > 0:
             cost = [item for item in prices if item['ProductId'] == orderIds[0]['id']]
-            console_logger.debug(f"Cost: {cost}")
+            print(f"Cost: {cost}")
             if cost[0]['Price'] == None:
                 obj['cobalt_price'] = ''
             else:
@@ -128,7 +128,7 @@ def process_classes(classes):
         else:
             obj['cobalt_price'] = '0.0000'
 
-        console_logger.debug(f"Price: {obj['cobalt_price']}")
+        print(f"Price: {obj['cobalt_price']}")
 
         #remove decimals
         if obj['cobalt_price'] != '':
@@ -199,7 +199,7 @@ def process_classes(classes):
         elif cobalt_location_id is None or cobalt_location_id == "null" or cobalt_location_id == "":
             obj['cobalt_LocationId'] = []
         else:
-            console_logger.debug(f"Venue not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {cobalt_location_id}")
+            print(f"Venue not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {cobalt_location_id}")
             obj['cobalt_LocationId'] = []
 
         #
@@ -251,7 +251,7 @@ def process_classes(classes):
 try:
     process_classes(classes)
 except Exception as e:
-    console_logger.error(e)
+    print(e)
     sendDiscordAlert(e)
 
 new_classes = []
@@ -291,9 +291,13 @@ def check_if_exists(classes):
 
                 for tag in filtered_tags:
                     tagFix += f"{tag},"
+
+                tagFix = tagFix[:-1]
                 
                 for cat in filtered_categories:
                     catFix += f"{cat},"
+
+                catFix = catFix[:-1]
 
                 obj['cobalt_cobalt_tag_cobalt_class'] = tagFix
                 obj['categories'] = catFix
@@ -316,13 +320,13 @@ def check_if_exists(classes):
 #get response
 
 if len(classes) == 0:
-    console_logger.debug("No new classes to process")
+    print("No new classes to process")
     exit()
 else:
     try:
         check_if_exists(classes)
     except Exception as e:
-        console_logger.error(e)
+        print(e)
 
 #check if class exists
 # print(existing_classes)
@@ -334,10 +338,10 @@ print(f"Existing Classes: {len(existing_classes)}")
 print(f"Featured Classes: {len(featured_classes)}")
 print(f"New Classes: {len(new_classes)}")
 
-console_logger.debug(new_classes)
+#print(new_classes)
 
 async def submit_new_class(data):
-    console_logger.debug(f"Submitting new class: {data['cobalt_name']} - {data['cobalt_classId']}")
+    print(f"Submitting new class: {data['cobalt_name']} - {data['cobalt_classId']}")
     ramcoClass = {
                 "title": data['cobalt_name'],
                 "status": "publish",

@@ -13,47 +13,6 @@ import logging.config
 #import env variables
 config = dotenv_values(".env")
 
-#setup logging
-logging_config = {
-    'version': 1,
-    'handlers': {
-        'Console': {
-            'class': 'logging.StreamHandler',
-            'level': 'DEBUG',
-            'stream': 'ext://sys.stderr',  # Redirect to stderr
-            'formatter': 'simple',
-        },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': 'logs/incremental.log',
-            'level': 'DEBUG',
-            'formatter': 'simple'
-        }
-    },
-    'formatters': {
-        'simple': {
-            'format': '[%(asctime)s] [%(process)d] [%(levelname)s] %(name)s: %(message)s',
-            'datefmt': '%Y-%m-%d %H:%M:%S %z'
-        },
-    },
-    'root': {
-        'level': 'DEBUG',
-        'handlers': ['Console', 'file'],
-    },
-}
-
-def send_slack_message(message):
-    payload = {
-        "text": message
-    }
-    headers = {
-        "Content-Type": "application/json"
-    }
-    response = requests.post(config["SLACK_WEBHOOK"], headers=headers, data=json.dumps(payload))
-
-logging.config.dictConfig(logging_config)
-console_logger = logging.getLogger('Console')
-
 # set up wordpress url if staging is true in env
 if os.environ.get('STAGING') == 'true':
     config['WORDPRESS_URL'] = config['STAGING_URL']
@@ -95,7 +54,7 @@ def process_classes(classes):
     
     for obj in classes:
 
-        console_logger.debug(f"Processing: {obj['cobalt_name']} - {obj['cobalt_classId']}")
+        print(f"Processing: {obj['cobalt_name']} - {obj['cobalt_classId']}")
 
         #format start date
         startDate = datetime.datetime.fromtimestamp(obj['cobalt_ClassBeginDate']['Value'])
@@ -113,7 +72,7 @@ def process_classes(classes):
                 'status': item['statuscode']['Value'],
             })
         
-        console_logger.debug(f"Order Ids: {orderIds}")
+        #print(f"Order Ids: {orderIds}")
 
         #remove order ids
         orderIds = [item for item in orderIds if item['id'] != '8d6bb524-f1d8-41ad-8c21-ae89d35d4dc3']
@@ -121,12 +80,12 @@ def process_classes(classes):
         orderIds = [item for item in orderIds if item['id'] != None]
         orderIds = [item for item in orderIds if item['status'] == 1]
 
-        console_logger.debug(f"Order Ids: {orderIds}")
+        #print(f"Order Ids: {orderIds}")
 
         #set price
         if len(orderIds) > 0:
             cost = [item for item in prices if item['ProductId'] == orderIds[0]['id']]
-            console_logger.debug(f"Cost: {cost}")
+            #print(f"Cost: {cost}")
             if cost[0]['Price'] == None:
                 obj['cobalt_price'] = ''
             else:
@@ -134,7 +93,7 @@ def process_classes(classes):
         else:
             obj['cobalt_price'] = '0.0000'
 
-        console_logger.debug(f"Price: {obj['cobalt_price']}")
+        #print(f"Price: {obj['cobalt_price']}")
 
         #remove decimals
         if obj['cobalt_price'] != '':
@@ -157,12 +116,12 @@ def process_classes(classes):
                 if len(resultTag)>0:
                     tags.append(resultTag[0])
                 else:
-                    console_logger.debug(f"Tag not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {item['cobalt_name']}")
+                    print(f"Tag not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {item['cobalt_name']}")
                 resultCat = [cat['id'] for cat in catSearch if cat['name'] == item['cobalt_name']]
                 if len(resultCat)>0:
                     categories.append(resultCat[0])
                 else:
-                    console_logger.debug(f"Category not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {item['cobalt_name']}")
+                    print(f"Category not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {item['cobalt_name']}")
         else:
             tags.append(1660)
 
@@ -194,18 +153,17 @@ def process_classes(classes):
 
         resultVenue = [ven['id'] for ven in venueSearch if ven['name'] == cobalt_location_id]
 
-        # console_logger.debug(resultVenue)
-        # console_logger.debug(cobalt_location_id)
+        # print(resultVenue)
+        # print(cobalt_location_id)
 
-        #console_logger.debug(f"Venue found: {resultVenue}")
+        #print(f"Venue found: {resultVenue}")
 
         if len(resultVenue) > 0:
-            console_logger.debug
             obj['cobalt_LocationId'] = resultVenue
         elif cobalt_location_id is None or cobalt_location_id == "null" or cobalt_location_id == "":
             obj['cobalt_LocationId'] = []
         else:
-            console_logger.debug(f"Venue not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {cobalt_location_id}")
+            print(f"Venue not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {cobalt_location_id}")
             obj['cobalt_LocationId'] = []
 
         #
@@ -228,10 +186,10 @@ def process_classes(classes):
 
         style = location_mapping.get(cobalt_location_id, default_style)
 
-        #console_logger.debug(f'Looking up location style for {obj["cobalt_name"]} - {cobalt_location_id} - {style}')
+        #print(f'Looking up location style for {obj["cobalt_name"]} - {cobalt_location_id} - {style}')
 
         if obj['cobalt_LocationId'] != [] and style != "":
-            #console_logger.debug('Applying style')
+            #print('Applying style')
             obj['cobalt_name'] = f"<span style=\"color:{style};\">{obj['cobalt_name']}</span>"
         else:
             obj['cobalt_name'] = obj['cobalt_name']
@@ -252,12 +210,12 @@ def process_classes(classes):
         #set tags
         obj['cobalt_cobalt_tag_cobalt_class'] = tags
 
-        console_logger.debug(f"Class processed: {obj['cobalt_name']} - {obj['cobalt_classId']} - {obj['cobalt_LocationId']} - {obj['cobalt_price']} - {obj['cobalt_cobalt_tag_cobalt_class']}")
+        print(f"Class processed: {obj['cobalt_name']} - {obj['cobalt_classId']} - {obj['cobalt_LocationId']} - {obj['cobalt_price']} - {obj['cobalt_cobalt_tag_cobalt_class']}")
 
 try:
     process_classes(classes)
 except Exception as e:
-    console_logger.error(e)
+    print(e)
     sendDiscordAlert(e)
 
 new_classes = []
@@ -271,7 +229,7 @@ def check_if_exists(classes):
         if obj['ramcosub_calendar_override'] == 'false':
             response = requests.get(f"{config['WORDPRESS_URL']}/events/by-slug/{obj['cobalt_classId']}")
 
-            console_logger.debug(f'Checking {obj['cobalt_name']} - {obj['cobalt_classId']} - {response.status_code}')
+            print(f'Checking {obj['cobalt_name']} - {obj['cobalt_classId']} - {response.status_code}')
 
             if response.status_code == 200:
 
@@ -283,12 +241,12 @@ def check_if_exists(classes):
                 response_categories = [response['id'] for response in response['categories']]
                 all_categories = obj['categories'] + response_categories
 
-                #console_logger.debug(all_tags)
+                #print(all_tags)
 
                 obj['sticky']= response['sticky']
                 obj['featured']= response['featured']
 
-                #console_logger.debug(f'Checking {obj['cobalt_name']} - {response['url']}')
+                #print(f'Checking {obj['cobalt_name']} - {response['url']}')
                 filtered_tags = list(set(all_tags))
                 filtered_categories = list(set(all_categories))
 
@@ -306,40 +264,40 @@ def check_if_exists(classes):
 
                 if response["image"] == False:
                     #obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
-                    console_logger.debug("No class image!")
+                    print("No class image!")
                     existing_classes.append(obj)
                 else:
                     #obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
                     obj['featuredImage'] = response['image']['url']
-                    console_logger.debug(response['image']['url'])
+                    print(response['image']['url'])
                     featured_classes.append(obj)
             else:
                 new_classes.append(obj)
         else:
-            console_logger.debug(f'Sending {obj['cobalt_name']} - {obj['cobalt_classId']} to the shadowrealm')
+            print(f'Sending {obj['cobalt_name']} - {obj['cobalt_classId']} to the shadowrealm')
             class_shadowrealm.append(obj)
 
 #get response
 
 if len(classes) == 0:
-    console_logger.debug("No new classes to process")
+    print("No new classes to process")
     exit()
 else:
     try:
         check_if_exists(classes)
     except Exception as e:
         sendDiscordAlert(e)
-        console_logger.error(e)
+        print(e)
 
-console_logger.debug(f"Existing Classes: {len(existing_classes)}")
-console_logger.debug(f"Featured Classes: {len(featured_classes)}")
-console_logger.debug(f"New Classes: {len(new_classes)}")
-console_logger.debug(f"Shadowrealm Classes: {len(class_shadowrealm)}")
+print(f"Existing Classes: {len(existing_classes)}")
+print(f"Featured Classes: {len(featured_classes)}")
+print(f"New Classes: {len(new_classes)}")
+print(f"Shadowrealm Classes: {len(class_shadowrealm)}")
 
 async def submit_existing_class(data):
-        #console_logger.debug(data)
+        #print(data)
 
-    console_logger.debug(f"Submitting existing class: {data['cobalt_classId']} - {data['cobalt_LocationId']} - {data['cobalt_name']} - {data['cobalt_price']} - {data['cobalt_cobalt_tag_cobalt_class']}")
+    print(f"Submitting existing class: {data['cobalt_classId']} - {data['cobalt_LocationId']} - {data['cobalt_name']} - {data['cobalt_price']} - {data['cobalt_cobalt_tag_cobalt_class']}")
 
     ramco_class = {
         "title": data['cobalt_name'],
@@ -359,13 +317,13 @@ async def submit_existing_class(data):
         "sticky": data['sticky']
     }
 
-    console_logger.debug(ramco_class)
+    #print(ramco_class)
 
     if data['cobalt_LocationId'] != []:
         ramco_class["venue"] = data['cobalt_LocationId']
 
     #payload = urlencode(ramco_class)
-    console_logger.debug(payload)
+    #print(payload)
     url = f"{config['WORDPRESS_URL']}/events/by-slug/{data['cobalt_classId']}"
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -373,11 +331,11 @@ async def submit_existing_class(data):
     }
     response = requests.post(url, headers=headers, params=ramco_class)
     body = response.json()
-    console_logger.debug(body)
-    console_logger.debug(f"Class processed: {data['cobalt_name']}")
+    #print(body)
+    print(f"Class processed: {data['cobalt_name']}")
 
 async def submit_featured_class(data):
-    console_logger.debug(f"Submitting featured class: {data['cobalt_classId']} - {data['cobalt_LocationId']}")
+    print(f"Submitting featured class: {data['cobalt_classId']} - {data['cobalt_LocationId']}")
     ramcoClass = {
                 "title": data['cobalt_name'],
                 "status": "publish",
@@ -412,14 +370,12 @@ async def submit_featured_class(data):
     response = requests.post(url, headers=headers, data=payload)
     
     if response.status_code == 200:
-        console_logger.debug(f"Featured class processed: {data['cobalt_name']}")
-        console_logger.debug(response.text)
+        print(f"Featured class processed: {data['cobalt_name']}")
     else:
-        console_logger.error(response.text)
-        send_slack_message(response.text)
+        print(response.text)
 
 
-    #console_logger.debug(response)
+    #print(response)
 
 async def sumbit_e_classes(data):
     for obj in data:
