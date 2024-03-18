@@ -236,4 +236,4 @@ def getVenues(url):
 
     # Save the data to a file
     with open('venues.json', 'w') as f:
-        f.write(json.dumps(venuesLite))             
+        f.write(json.dumps(venuesLite))

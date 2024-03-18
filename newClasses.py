@@ -4,335 +4,342 @@ from pricelist import pricelist, getTags, getCategories, getVenues
 from alerts import sendDiscordAlert
 import logging.config
 
-#import env variables
-config = dotenv_values(".env")
+def newClasses():
+    #import env variables
+    config = dotenv_values(".env")
 
-# set up wordpress url if staging is true in env
-if os.environ.get('STAGING') == 'true':
-    config['WORDPRESS_URL'] = config['STAGING_URL']
+    # set up wordpress url if staging is true in env
+    if os.environ.get('STAGING') == 'true':
+        config['WORDPRESS_URL'] = config['STAGING_URL']
 
-#update pricelist
-pricelist()
-getTags(config['WORDPRESS_URL'])
-getCategories(config['WORDPRESS_URL'])
-getVenues(config['WORDPRESS_URL'])
+    #update pricelist
+    pricelist()
+    getTags(config['WORDPRESS_URL'])
+    getCategories(config['WORDPRESS_URL'])
+    getVenues(config['WORDPRESS_URL'])
 
-#get date minus 1 hour
-date_start = datetime.datetime.now() - datetime.timedelta(hours=1)
-date_start = date_start.strftime("%Y-%m-%dT%H:00:00")
+    #get date minus 1 hour
+    date_start = datetime.datetime.now() - datetime.timedelta(hours=1)
+    date_start = date_start.strftime("%Y-%m-%dT%H:00:00")
 
-# #build api request
-payload = {
-    'Key': config['API_KEY'],
-    'Operation': 'GetEntities',
-    'Entity': 'cobalt_class',
-    'Filter': f'createdon<ge>{date_start} AND statuscode<eq>1',
-    'Attributes': 'cobalt_classbegindate,cobalt_classenddate,cobalt_classid,cobalt_locationid,cobalt_name,cobalt_description,cobalt_locationid,cobalt_cobalt_tag_cobalt_class/cobalt_name,cobalt_fullday,cobalt_publishtoportal,statuscode,cobalt_cobalt_classinstructor_cobalt_class/cobalt_name,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_productid,cobalt_cobalt_class_cobalt_classregistrationfee/statuscode,cobalt_outsideprovider,cobalt_outsideproviderlink,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_publishtoportal,ramcosub_calendar_override'
-}
+    # #build api request
+    payload = {
+        'Key': config['API_KEY'],
+        'Operation': 'GetEntities',
+        'Entity': 'cobalt_class',
+        'Filter': f'createdon<ge>{date_start} AND statuscode<eq>1',
+        'Attributes': 'cobalt_classbegindate,cobalt_classenddate,cobalt_classid,cobalt_locationid,cobalt_name,cobalt_description,cobalt_locationid,cobalt_cobalt_tag_cobalt_class/cobalt_name,cobalt_fullday,cobalt_publishtoportal,statuscode,cobalt_cobalt_classinstructor_cobalt_class/cobalt_name,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_productid,cobalt_cobalt_class_cobalt_classregistrationfee/statuscode,cobalt_outsideprovider,cobalt_outsideproviderlink,cobalt_cobalt_class_cobalt_classregistrationfee/cobalt_publishtoportal,ramcosub_calendar_override'
+    }
 
-#request data from RAMCO API
-response = requests.post(config['API_URL'], data=payload)
-body = json.loads(response.text)
+    #request data from RAMCO API
+    response = requests.post(config['API_URL'], data=payload)
+    body = json.loads(response.text)
 
-if 'Data' not in body:
-    print("No new classes to process")
-    exit()
-else:  
-    classes = body['Data']
+    if 'Data' not in body:
+        print("No new classes to process")
+        exit()
+    else:  
+        classes = body['Data']
 
-#loop through classes
-def process_classes(classes):
-    #
-    #   load pricelist and class attribute data
-    #
+    #loop through classes
+    def process_classes(classes):
+        #
+        #   load pricelist and class attribute data
+        #
 
-    prices = json.load(open('./pricelist.json', 'r'))
-    tagSearch = json.load(open('./tags.json', 'r'))
-    catSearch = json.load(open('./categories.json', 'r'))
-    venueSearch = json.load(open('./venues.json', 'r'))
-    
-    for obj in classes:
-
-        #format start date
-        startDate = datetime.datetime.fromtimestamp(obj['cobalt_ClassBeginDate']['Value'])
-        obj['cobalt_ClassBeginDate']['Display'] = startDate.strftime("%Y-%m-%d %H:%M:%S")
-
-        #format end date
-        endDate = datetime.datetime.fromtimestamp(obj['cobalt_ClassEndDate']['Value'])
-        obj['cobalt_ClassEndDate']['Display'] = endDate.strftime("%Y-%m-%d %H:%M:%S")
-
-        #get order ids
-        orderIds = []
-        for item in obj['cobalt_cobalt_class_cobalt_classregistrationfee']:
-            orderIds.append({
-                'id': item['cobalt_productid']['Value'],
-                'status': item['statuscode']['Value'],
-            })
+        prices = json.load(open('./pricelist.json', 'r'))
+        tagSearch = json.load(open('./tags.json', 'r'))
+        catSearch = json.load(open('./categories.json', 'r'))
+        venueSearch = json.load(open('./venues.json', 'r'))
         
-        #remove order ids
-        orderIds = [item for item in orderIds if item['id'] != '8d6bb524-f1d8-41ad-8c21-ae89d35d4dc3']
-        orderIds = [item for item in orderIds if item['id'] != 'c3102913-ffd4-49d6-9bf6-5f0575b0b635']
-        orderIds = [item for item in orderIds if item['id'] != None]
-        orderIds = [item for item in orderIds if item['status'] == 1]
+        for obj in classes:
 
-        if len(orderIds) > 0:
-            cost = [item for item in prices if item['ProductId'] == orderIds[0]['id']]
-            #print(f"Cost: {cost}")
-            if cost[0]['Price'] == None:
-                obj['cobalt_price'] = ''
+            #format start date
+            startDate = datetime.datetime.fromtimestamp(obj['cobalt_ClassBeginDate']['Value'])
+            obj['cobalt_ClassBeginDate']['Display'] = startDate.strftime("%Y-%m-%d %H:%M:%S")
+
+            #format end date
+            endDate = datetime.datetime.fromtimestamp(obj['cobalt_ClassEndDate']['Value'])
+            obj['cobalt_ClassEndDate']['Display'] = endDate.strftime("%Y-%m-%d %H:%M:%S")
+
+            #get order ids
+            orderIds = []
+            for item in obj['cobalt_cobalt_class_cobalt_classregistrationfee']:
+                orderIds.append({
+                    'id': item['cobalt_productid']['Value'],
+                    'status': item['statuscode']['Value'],
+                })
+            
+            #remove order ids
+            orderIds = [item for item in orderIds if item['id'] != '8d6bb524-f1d8-41ad-8c21-ae89d35d4dc3']
+            orderIds = [item for item in orderIds if item['id'] != 'c3102913-ffd4-49d6-9bf6-5f0575b0b635']
+            orderIds = [item for item in orderIds if item['id'] != None]
+            orderIds = [item for item in orderIds if item['status'] == 1]
+
+            if len(orderIds) > 0:
+                cost = [item for item in prices if item['ProductId'] == orderIds[0]['id']]
+                #print(f"Cost: {cost}")
+                if cost[0]['Price'] == None:
+                    obj['cobalt_price'] = ''
+                else:
+                    obj['cobalt_price'] = cost[0]['Price']
             else:
-                obj['cobalt_price'] = cost[0]['Price']
-        else:
-            obj['cobalt_price'] = '0.0000'
+                obj['cobalt_price'] = '0.0000'
 
-        #print(f"Price: {obj['cobalt_price']}")
+            #print(f"Price: {obj['cobalt_price']}")
 
-        #remove decimals
-        if obj['cobalt_price'] != '':
-            obj['cobalt_price'] = obj['cobalt_price'][:-2]
+            #remove decimals
+            if obj['cobalt_price'] != '':
+                obj['cobalt_price'] = obj['cobalt_price'][:-2]
 
-        #set price to blank if outside provider
-        if obj['cobalt_OutsideProvider'] == 'true':
-            obj['cobalt_price'] = ''
+            #set price to blank if outside provider
+            if obj['cobalt_OutsideProvider'] == 'true':
+                obj['cobalt_price'] = ''
 
 
-        #
-        # Check if the tags and categories exist in wordpress
-        #
-        tags = []
-        categories = []
+            #
+            # Check if the tags and categories exist in wordpress
+            #
+            tags = []
+            categories = []
 
-        if len(obj['cobalt_cobalt_tag_cobalt_class']) > 0:
-            for item in obj['cobalt_cobalt_tag_cobalt_class']:
-                resultTag = [tag['id'] for tag in tagSearch if tag['name'] == item['cobalt_name']]
-                if len(resultTag)>0:
-                    tags.append(resultTag[0])
+            if len(obj['cobalt_cobalt_tag_cobalt_class']) > 0:
+                for item in obj['cobalt_cobalt_tag_cobalt_class']:
+                    resultTag = [tag['id'] for tag in tagSearch if tag['name'] == item['cobalt_name']]
+                    if len(resultTag)>0:
+                        tags.append(resultTag[0])
+                    else:
+                        sendDiscordAlert(f"Tag not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {item['cobalt_name']}")
+                    resultCat = [cat['id'] for cat in catSearch if cat['name'] == item['cobalt_name']]
+                    if len(resultCat)>0:
+                        categories.append(resultCat[0])
+                    else:
+                        sendDiscordAlert(f"Category not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {item['cobalt_name']}")
+            else:
+                tags.append(1660)
+
+            obj['cobalt_cobalt_tag_cobalt_class'] = tags
+            obj['categories'] = categories
+            
+            #set status code
+            obj['statuscode'] = obj['statuscode']['Display']
+
+            #set publish status
+            if obj['statuscode'] == 'Inactive' or obj['cobalt_PublishtoPortal'] == 'false':
+                obj['publish'] = True
+            elif obj['statuscode'] == 'Active' and obj['cobalt_PublishtoPortal'] == 'true':
+                obj['publish'] = False
+            else:
+                obj['publish'] = True
+
+            #set all day status
+            if obj['cobalt_fullday'] == 'true':
+                obj['all_day'] = True
+            else:
+                obj['all_day'] = False
+            
+            #
+            # Check if the venue exists in wordpress and set the location id
+            #
+
+            cobalt_location_id = obj['cobalt_LocationId']['Display'] 
+
+            resultVenue = [ven['id'] for ven in venueSearch if ven['name'] == cobalt_location_id]
+
+            # print(resultVenue)
+            # print(cobalt_location_id)
+
+            #print(f"Venue found: {resultVenue}")
+
+            if len(resultVenue) > 0:
+                obj['cobalt_LocationId'] = resultVenue
+            elif cobalt_location_id is None or cobalt_location_id == "null" or cobalt_location_id == "":
+                obj['cobalt_LocationId'] = []
+            else:
+                sendDiscordAlert(f"Venue not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {cobalt_location_id}")
+                obj['cobalt_LocationId'] = []
+
+            #
+            # Set syling for the class based on location
+            #
+
+            location_mapping = {
+                "MIAMI HQ": "#798e2d",
+                "West Broward Sawgrass Office": "#0082c9",
+                "Coral Gables Office": "#633e81",
+                "JTHS MIAMI Training Room (Jupiter)": "#005962",
+                "Northwestern Dade": "#9e182f",
+                "Northwestern Dade Office": "#9e182f",
+                "NE Broward Office-Ft. Lauderdale": "#f26722",
+                "Aventura Office": "#000000",
+                "null": "",
+            }
+
+            default_style = ""  # Default style value
+
+            style = location_mapping.get(cobalt_location_id, default_style)
+
+            #print(f'Looking up location style for {obj["cobalt_name"]} - {cobalt_location_id} - {style}')
+
+            if obj['cobalt_LocationId'] != [] and style != "":
+                #print('Applying style')
+                obj['cobalt_name'] = f"<span style=\"color:{style};\">{obj['cobalt_name']}</span>"
+            else:
+                obj['cobalt_name'] = obj['cobalt_name']
+
+
+            #set outside provider link
+            if obj['cobalt_OutsideProvider'] == 'true':
+                obj['cobalt_Description'] = f"{obj['cobalt_Description']}<br><input style=\"background-color: #4CAF50;border: none;color: white;padding: 15px 32px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;\" type=\"button\" value=\"Register Now\" onclick=\"window.location.href='{obj['cobalt_OutsideProviderLink']}'\" />"
+            else:
+                obj['cobalt_Description'] = f"{obj['cobalt_Description']}<br><input style=\"background-color: #4CAF50;border: none;color: white;padding: 15px 32px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;\" type=\"button\" value=\"Register Now\" onclick=\"window.location.href='https://miamiportal.ramcoams.net/Authentication/DefaultSingleSignon.aspx?ReturnUrl=%2FEducation%2FRegistration%2FDetails.aspx%3Fcid%3D{obj['cobalt_classId']}'\" />"
+
+            if(len(obj['cobalt_cobalt_classinstructor_cobalt_class']) > 0):
+                classInstructor = [item['cobalt_name'] for item in obj['cobalt_cobalt_classinstructor_cobalt_class']]
+                obj['cobalt_Description'] = f"<p style=\"font-weight:bold;color: black;\">Instructor: {classInstructor[0]}</p><br><br>{obj['cobalt_Description']}"
+            else:
+                obj['cobalt_Description'] = obj['cobalt_Description']
+
+            #set tags
+            obj['cobalt_cobalt_tag_cobalt_class'] = tags
+
+            print(f"Class processed: {obj['cobalt_name']} - {obj['cobalt_classId']} - {obj['cobalt_LocationId']} - {obj['cobalt_price']} - {obj['cobalt_cobalt_tag_cobalt_class']}")
+
+    try:
+        process_classes(classes)
+    except Exception as e:
+        print(e)
+        sendDiscordAlert(e)
+
+    new_classes = []
+    featured_classes = []
+    existing_classes = []
+    class_shadowrealm = []
+
+    #check if class exists
+    def check_if_exists(classes):
+        for obj in classes:
+            if obj['ramcosub_calendar_override'] == 'false':
+                response = requests.get(f"{config['WORDPRESS_URL']}/events/by-slug/{obj['cobalt_classId']}")
+
+                print(f'Checking {obj['cobalt_name']} - {obj['cobalt_classId']} - {response.status_code}')
+
+                if response.status_code == 200:
+
+                    response = response.json()
+
+                    response_tags = [response['id'] for response in response['tags']]
+                    all_tags = obj['cobalt_cobalt_tag_cobalt_class'] + response_tags
+
+                    response_categories = [response['id'] for response in response['categories']]
+                    all_categories = obj['categories'] + response_categories
+
+                    #print(all_tags)
+
+                    obj['sticky']= response['sticky']
+                    obj['featured']= response['featured']
+
+                    #print(f'Checking {obj['cobalt_name']} - {response['url']}')
+                    filtered_tags = list(set(all_tags))
+                    filtered_categories = list(set(all_categories))
+
+                    tagFix = ""
+                    catFix = ""
+
+                    for tag in filtered_tags:
+                        tagFix += f"{tag},"
+                    
+                    for cat in filtered_categories:
+                        catFix += f"{cat},"
+
+                    obj['cobalt_cobalt_tag_cobalt_class'] = tagFix
+                    obj['categories'] = catFix
+
+                    if response["image"] == False:
+                        #obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
+                        print("No class image!")
+                        existing_classes.append(obj)
+                    else:
+                        #obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
+                        obj['featuredImage'] = response['image']['url']
+                        print(response['image']['url'])
+                        featured_classes.append(obj)
                 else:
-                    sendDiscordAlert(f"Tag not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {item['cobalt_name']}")
-                resultCat = [cat['id'] for cat in catSearch if cat['name'] == item['cobalt_name']]
-                if len(resultCat)>0:
-                    categories.append(resultCat[0])
-                else:
-                    sendDiscordAlert(f"Category not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {item['cobalt_name']}")
-        else:
-            tags.append(1660)
+                    new_classes.append(obj)
+            else:
+                print(f'Sending {obj['cobalt_name']} - {obj['cobalt_classId']} to the shadowrealm')
+                class_shadowrealm.append(obj)
 
-        obj['cobalt_cobalt_tag_cobalt_class'] = tags
-        obj['categories'] = categories
+    #get response
+
+    if len(classes) == 0:
+        print("No new classes to process")
+        exit()
+    else:
+        try:
+            check_if_exists(classes)
+        except Exception as e:
+            sendDiscordAlert(e)
+            print(e)
+
+    #check if class exists
+    # print(existing_classes)
+    # print(featured_classes)
+    #print(new_classes)
+
+    #print amount of classes in each array
+    print(f"Existing Classes: {len(existing_classes)}")
+    print(f"Featured Classes: {len(featured_classes)}")
+    print(f"New Classes: {len(new_classes)}")
+
+    async def submit_new_class(data):
+        print(f"Submitting new class: {data['cobalt_name']} - {data['cobalt_classId']}")
+        ramcoClass = {
+                    "title": data['cobalt_name'],
+                    "status": "publish",
+                    "hide_from_listings": data['publish'],
+                    "description": data['cobalt_Description'],
+                    "all_day": data['all_day'],
+                    "start_date": data['cobalt_ClassBeginDate']['Display'],
+                    "end_date": data['cobalt_ClassEndDate']['Display'],
+                    "slug": data['cobalt_classId'],
+                    "categories": data['categories'],
+                    "show_map_link": True,
+                    "show_map": True,
+                    "cost": data['cobalt_price'],
+                    "tags": data['cobalt_cobalt_tag_cobalt_class']
+                }
         
-        #set status code
-        obj['statuscode'] = obj['statuscode']['Display']
+        if data['cobalt_LocationId'] != []:
+            ramcoClass["venue"] = data['cobalt_LocationId']
 
-        #set publish status
-        if obj['statuscode'] == 'Inactive' or obj['cobalt_PublishtoPortal'] == 'false':
-            obj['publish'] = True
-        elif obj['statuscode'] == 'Active' and obj['cobalt_PublishtoPortal'] == 'true':
-            obj['publish'] = False
-        else:
-            obj['publish'] = True
-
-        #set all day status
-        if obj['cobalt_fullday'] == 'true':
-            obj['all_day'] = True
-        else:
-            obj['all_day'] = False
-        
-        #
-        # Check if the venue exists in wordpress and set the location id
-        #
-
-        cobalt_location_id = obj['cobalt_LocationId']['Display'] 
-
-        resultVenue = [ven['id'] for ven in venueSearch if ven['name'] == cobalt_location_id]
-
-        # print(resultVenue)
-        # print(cobalt_location_id)
-
-        #print(f"Venue found: {resultVenue}")
-
-        if len(resultVenue) > 0:
-            obj['cobalt_LocationId'] = resultVenue
-        elif cobalt_location_id is None or cobalt_location_id == "null" or cobalt_location_id == "":
-            obj['cobalt_LocationId'] = []
-        else:
-            sendDiscordAlert(f"Venue not found in wordpress for ***{obj['cobalt_name']}*** with id ***{obj['cobalt_classId']}*** : {cobalt_location_id}")
-            obj['cobalt_LocationId'] = []
-
-        #
-        # Set syling for the class based on location
-        #
-
-        location_mapping = {
-            "MIAMI HQ": "#798e2d",
-            "West Broward Sawgrass Office": "#0082c9",
-            "Coral Gables Office": "#633e81",
-            "JTHS MIAMI Training Room (Jupiter)": "#005962",
-            "Northwestern Dade": "#9e182f",
-            "Northwestern Dade Office": "#9e182f",
-            "NE Broward Office-Ft. Lauderdale": "#f26722",
-            "Aventura Office": "#000000",
-            "null": "",
+        #payload = urlencode(ramco_class)
+        #print(ramcoClass)
+        url = f"{config['WORDPRESS_URL']}/events"
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
         }
 
-        default_style = ""  # Default style value
-
-        style = location_mapping.get(cobalt_location_id, default_style)
-
-        #print(f'Looking up location style for {obj["cobalt_name"]} - {cobalt_location_id} - {style}')
-
-        if obj['cobalt_LocationId'] != [] and style != "":
-            #print('Applying style')
-            obj['cobalt_name'] = f"<span style=\"color:{style};\">{obj['cobalt_name']}</span>"
+        #post data
+        response = requests.post(url, headers=headers, params=ramcoClass)
+        
+        if response.status_code == 201:
+            print(f"Class processed: {data['cobalt_name']}")
         else:
-            obj['cobalt_name'] = obj['cobalt_name']
+            print(f'Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}')
+            sendDiscordAlert(f'Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}')
 
+        #print(response)
 
-        #set outside provider link
-        if obj['cobalt_OutsideProvider'] == 'true':
-            obj['cobalt_Description'] = f"{obj['cobalt_Description']}<br><input style=\"background-color: #4CAF50;border: none;color: white;padding: 15px 32px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;\" type=\"button\" value=\"Register Now\" onclick=\"window.location.href='{obj['cobalt_OutsideProviderLink']}'\" />"
-        else:
-            obj['cobalt_Description'] = f"{obj['cobalt_Description']}<br><input style=\"background-color: #4CAF50;border: none;color: white;padding: 15px 32px;text-align: center;text-decoration: none;display: inline-block;font-size: 16px;\" type=\"button\" value=\"Register Now\" onclick=\"window.location.href='https://miamiportal.ramcoams.net/Authentication/DefaultSingleSignon.aspx?ReturnUrl=%2FEducation%2FRegistration%2FDetails.aspx%3Fcid%3D{obj['cobalt_classId']}'\" />"
+    async def sumbit_classes(data):
+        for obj in data:
+            await submit_new_class(obj)
 
-        if(len(obj['cobalt_cobalt_classinstructor_cobalt_class']) > 0):
-            classInstructor = [item['cobalt_name'] for item in obj['cobalt_cobalt_classinstructor_cobalt_class']]
-            obj['cobalt_Description'] = f"<p style=\"font-weight:bold;color: black;\">Instructor: {classInstructor[0]}</p><br><br>{obj['cobalt_Description']}"
-        else:
-            obj['cobalt_Description'] = obj['cobalt_Description']
-
-        #set tags
-        obj['cobalt_cobalt_tag_cobalt_class'] = tags
-
-        print(f"Class processed: {obj['cobalt_name']} - {obj['cobalt_classId']} - {obj['cobalt_LocationId']} - {obj['cobalt_price']} - {obj['cobalt_cobalt_tag_cobalt_class']}")
+    asyncio.run(sumbit_classes(new_classes))
 
 try:
-    process_classes(classes)
+    newClasses()
 except Exception as e:
     print(e)
     sendDiscordAlert(e)
-
-new_classes = []
-featured_classes = []
-existing_classes = []
-class_shadowrealm = []
-
-#check if class exists
-def check_if_exists(classes):
-    for obj in classes:
-        if obj['ramcosub_calendar_override'] == 'false':
-            response = requests.get(f"{config['WORDPRESS_URL']}/events/by-slug/{obj['cobalt_classId']}")
-
-            print(f'Checking {obj['cobalt_name']} - {obj['cobalt_classId']} - {response.status_code}')
-
-            if response.status_code == 200:
-
-                response = response.json()
-
-                response_tags = [response['id'] for response in response['tags']]
-                all_tags = obj['cobalt_cobalt_tag_cobalt_class'] + response_tags
-
-                response_categories = [response['id'] for response in response['categories']]
-                all_categories = obj['categories'] + response_categories
-
-                #print(all_tags)
-
-                obj['sticky']= response['sticky']
-                obj['featured']= response['featured']
-
-                #print(f'Checking {obj['cobalt_name']} - {response['url']}')
-                filtered_tags = list(set(all_tags))
-                filtered_categories = list(set(all_categories))
-
-                tagFix = ""
-                catFix = ""
-
-                for tag in filtered_tags:
-                    tagFix += f"{tag},"
-                
-                for cat in filtered_categories:
-                    catFix += f"{cat},"
-
-                obj['cobalt_cobalt_tag_cobalt_class'] = tagFix
-                obj['categories'] = catFix
-
-                if response["image"] == False:
-                    #obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
-                    print("No class image!")
-                    existing_classes.append(obj)
-                else:
-                    #obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
-                    obj['featuredImage'] = response['image']['url']
-                    print(response['image']['url'])
-                    featured_classes.append(obj)
-            else:
-                new_classes.append(obj)
-        else:
-            print(f'Sending {obj['cobalt_name']} - {obj['cobalt_classId']} to the shadowrealm')
-            class_shadowrealm.append(obj)
-
-#get response
-
-if len(classes) == 0:
-    print("No new classes to process")
-    exit()
-else:
-    try:
-        check_if_exists(classes)
-    except Exception as e:
-        sendDiscordAlert(e)
-        print(e)
-
-#check if class exists
-# print(existing_classes)
-# print(featured_classes)
-#print(new_classes)
-
-#print amount of classes in each array
-print(f"Existing Classes: {len(existing_classes)}")
-print(f"Featured Classes: {len(featured_classes)}")
-print(f"New Classes: {len(new_classes)}")
-
-async def submit_new_class(data):
-    print(f"Submitting new class: {data['cobalt_name']} - {data['cobalt_classId']}")
-    ramcoClass = {
-                "title": data['cobalt_name'],
-                "status": "publish",
-                "hide_from_listings": data['publish'],
-                "description": data['cobalt_Description'],
-                "all_day": data['all_day'],
-                "start_date": data['cobalt_ClassBeginDate']['Display'],
-                "end_date": data['cobalt_ClassEndDate']['Display'],
-                "slug": data['cobalt_classId'],
-                "categories": data['categories'],
-                "show_map_link": True,
-                "show_map": True,
-                "cost": data['cobalt_price'],
-                "tags": data['cobalt_cobalt_tag_cobalt_class']
-            }
-    
-    if data['cobalt_LocationId'] != []:
-        ramcoClass["venue"] = data['cobalt_LocationId']
-
-    #payload = urlencode(ramco_class)
-    #print(ramcoClass)
-    url = f"{config['WORDPRESS_URL']}/events"
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Basic ' + base64.b64encode(config['WORDPRESS_CREDS'].encode()).decode()
-    }
-
-    #post data
-    response = requests.post(url, headers=headers, params=ramcoClass)
-    
-    if response.status_code == 201:
-        print(f"Class processed: {data['cobalt_name']}")
-    else:
-        print(f'Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}')
-        sendDiscordAlert(f'Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}')
-
-    #print(response)
-
-async def sumbit_classes(data):
-    for obj in data:
-        await submit_new_class(obj)
-
-asyncio.run(sumbit_classes(new_classes))

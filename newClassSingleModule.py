@@ -344,8 +344,9 @@ def newClassSingle(guid, staging):
         response = requests.post(url, headers=headers, params=ramcoClass)
         
         if response.status_code == 201:
-            return f"Class submitted: {data['cobalt_name']}"
             print(f"Class processed: {data['cobalt_name']}")
+            print(response.json())
+            return f"Class submitted: {data['cobalt_name']}"
         else:
             print(f"Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}")
             sendDiscordAlert(f"Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}")
