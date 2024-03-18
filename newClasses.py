@@ -342,4 +342,4 @@ try:
     newClasses()
 except Exception as e:
     print(e)
-    sendDiscordAlert(e)
+    sendDiscordAlert(str(e))
