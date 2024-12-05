@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form with Live Output</title>
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main class="container">
+        <h1>Manual Class Updater</h1>
+        <form id="form">
+            <label for="class_url">Class URL</label>
+            <input type="url" id="class_url" name="class_url" placeholder="https://example.com" required>
+            <button type="submit">Submit</button>
+        </form>
+
+        <!-- Live Output -->
+        <h2>Live Console Output</h2>
+        <div id="output"></div>
+
+        <!-- Theme Toggle Slider -->
+        <div class="theme-toggle" data-theme="light">
+            <i class="fas fa-sun sun"></i>
+            <input type="checkbox" id="themeToggle">
+            <i class="fas fa-moon moon"></i>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        const form = document.getElementById("form");
+        const outputDiv = document.getElementById("output");
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault(); // Prevent the default form submission
+
+            // Clear previous output
+            outputDiv.innerHTML = "";
+
+            // Get form data
+            const formData = {
+                class_url: document.getElementById("class_url").value
+            };
+
+            // Emit form data to the server
+            socket.emit("submit_form", formData);
+        });
+
+        // Listen for updates from the server
+        socket.on("update_output", (data) => {
+            outputDiv.innerHTML += data.output + "\n"; // Append new output
+            outputDiv.scrollTop = outputDiv.scrollHeight; // Scroll to the bottom
+        });
+
+        // Load saved theme or default to dark theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute("data-theme", savedTheme);
+            themeToggle.checked = savedTheme === 'dark';
+        } else {
+            document.documentElement.setAttribute("data-theme", "dark");
+            themeToggle.checked = true;
+            localStorage.setItem('theme', 'dark');
+        }
+
+        // Toggle theme when the slider is changed
+        themeToggle.addEventListener("change", (e) => {
+            const isChecked = e.target.checked;
+            const theme = isChecked ? 'dark' : 'light';
+
+            // Set the theme
+            document.documentElement.setAttribute("data-theme", theme);
+            localStorage.setItem('theme', theme);
+        });
+    </script>
+</body>
+</html>

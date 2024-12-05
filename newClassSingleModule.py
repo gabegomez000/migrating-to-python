@@ -345,7 +345,7 @@ def newClassSingle(guid, staging):
         
         if response.status_code == 201:
             print(f"Class processed: {data['cobalt_name']}")
-            print(response.json())
+            #print(response.json())
             return f"Class submitted: {data['cobalt_name']}"
         else:
             print(f"Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}")

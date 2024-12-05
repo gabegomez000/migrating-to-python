@@ -86,7 +86,7 @@ def incremental():
             #set price
             if len(orderIds) > 0:
                 cost = [item for item in prices if item['ProductId'] == orderIds[0]['id']]
-                #print(f"Cost: {cost}")
+                print(f"Cost: {cost}")
                 if cost[0]['Price'] == None:
                     obj['cobalt_price'] = ''
                 else:

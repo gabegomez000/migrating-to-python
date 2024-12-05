@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Form</title>
+    <!-- PicoCSS -->
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main class="container">
+        <h1>Manual Class Updater</h1>
+        <form method="POST">
+            <label for="edit_type">Submitting new class or pushing edits?</label>
+            <select id="edit_type" name="edit_type" required>
+                <option value="" disabled selected>Select an option</option>
+                <option value="new">Submitting New Class</option>
+                <option value="redo">Pushing Edits</option>
+            </select>
+
+            <label for="class_url">Class URL</label>
+            <input type="url" id="class_url" name="class_url" placeholder="https://example.com" required>
+
+            <button type="submit">Submit</button>
+        </form>
+    </main>
+</body>
+</html>

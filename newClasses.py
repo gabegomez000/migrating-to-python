@@ -171,8 +171,7 @@ def newClasses():
                 "Northwestern Dade": "#9e182f",
                 "Northwestern Dade Office": "#9e182f",
                 "NE Broward Office-Ft. Lauderdale": "#f26722",
-                "Aventura Office": "#000000",
-                "null": "",
+                "Aventura Office": "#000000"
             }
 
             default_style = ""  # Default style value

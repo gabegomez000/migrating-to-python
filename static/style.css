@@ -1,0 +1,87 @@
+/* Center the form in the page */
+main.container {
+    margin-top: 5rem;
+    max-width: 1000px;
+}
+
+/* Additional spacing for better aesthetics */
+form label {
+    margin-top: 1rem;
+}
+/* Live Output Box (Dark Theme) */
+#output {
+    margin-top: 20px;
+    padding: 15px;
+    border: 2px solid;
+    border-radius: 5px;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 14px;
+    height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+/* Scrollbar Styling for Dark Theme */
+#output::-webkit-scrollbar {
+    width: 10px;
+}
+
+/* Slider Container */
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Slider Styling */
+.theme-toggle input[type="checkbox"] {
+    appearance: none;
+    width: 60px;
+    height: 30px;
+    border-radius: 30px;
+    background-color: #ccc;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.theme-toggle input[type="checkbox"]:checked {
+    background-color: #007bff;
+}
+
+.theme-toggle input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: white;
+    transition: transform 0.3s ease;
+}
+
+.theme-toggle input[type="checkbox"]:checked::before {
+    transform: translateX(30px);
+}
+
+/* Glyph Styling */
+.theme-toggle i {
+    font-size: 1.5em;
+    color: #fff;
+}
+
+/* Adjust icons for each theme */
+.theme-toggle[data-theme="light"] i.sun {
+    color: #f0e68c; /* Sun color for light theme */
+}
+
+.theme-toggle[data-theme="dark"] i.moon {
+    color: #f0e68c; /* Moon color for dark theme */
+}
+
+.theme-toggle[data-theme="light"] i.moon {
+    color: darkslategray; /* Moon color for dark theme */
+}

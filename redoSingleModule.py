@@ -1,4 +1,4 @@
-import requests, json, datetime, base64, os
+import requests, json, datetime, base64, os, traceback
 from urllib.parse import urlencode
 from dotenv import dotenv_values
 from pricelist import pricelist, getTags, getCategories, getVenues
@@ -39,8 +39,8 @@ def redoSingleModule(guid, staging):
     try:
         r = requests.post(config['API_URL'], data=payload)
     except Exception as e:
-        sendDiscordAlert(f"Error: {e}")
-        print(f"Error: {e}")
+        sendDiscordAlert(f"Error [RAMCO API]: {e}")
+        print(f"Error [RAMCO API]: {e}")
         return e
 
     # Parse the data
@@ -191,8 +191,8 @@ def redoSingleModule(guid, staging):
     try:
         processClass(obj)
     except Exception as e:
-        sendDiscordAlert(f"Error: {e}")
-        print(f"Error: {e}")
+        sendDiscordAlert(f"Error [Class Formatting]: {e}")
+        print(f"Error [Class Formatting]: {e}")
         return e
 
     featured_classes = []
@@ -202,14 +202,22 @@ def redoSingleModule(guid, staging):
 
     def check_if_exists(obj):
         if obj['ramcosub_calendar_override'] == 'false':
+
             response = requests.get(f"{config['WORDPRESS_URL']}/events/by-slug/{obj['cobalt_classId']}")
 
             print(f"Checking {obj['cobalt_name']} - {obj['cobalt_classId']} - {response.status_code}")
 
+            #print(response.text)
+
             if response.status_code == 200:
 
-                response = response.json()
-
+                if response.text:
+                    response = response.json()
+                else:
+                    print(f"Sending {obj['cobalt_name']} - {obj['cobalt_classId']} to the shadowrealm")
+                    class_shadowrealm.append(obj)
+                    return
+                
                 response_tags = [response['id'] for response in response['tags']]
                 all_tags = obj['cobalt_cobalt_tag_cobalt_class'] + response_tags
 
@@ -255,10 +263,11 @@ def redoSingleModule(guid, staging):
 
     try:
         check_if_exists(obj)
-    except Exception as e:
-        sendDiscordAlert(f"Error: {e}")
-        print(f"Error: {e}")
-        return e
+    except Exception as err:
+        sendDiscordAlert(f"Error [Check if Exists]: {err=}, {type(err)=}")
+        print(f"Error [Check if Exists]: {err=}, {type(err)=}")
+        traceback.print_exc()
+        return err
 
     print(f'Featured: {len(featured_classes)} Existing: {len(existing_classes)} New: {len(new_classes)} Shadowrealm: {len(class_shadowrealm)}' )
 
@@ -287,13 +296,13 @@ def redoSingleModule(guid, staging):
             "sticky": data[0]['sticky']
         }
 
-        print(ramco_class)
+        #print(ramco_class)
 
         if data[0]['cobalt_LocationId'] != []:
             ramco_class["venue"] = data[0]['cobalt_LocationId']
 
         #payload = urlencode(ramco_class)
-        print(ramco_class)
+        #print(ramco_class)
         url = f"{config['WORDPRESS_URL']}/events/by-slug/{data[0]['cobalt_classId']}"
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -301,7 +310,7 @@ def redoSingleModule(guid, staging):
         }
         response = requests.post(url, headers=headers, params=ramco_class)
         body = response.json()
-        print(body)
+        #print(body)
         print(f"Class processed: {data[0]['cobalt_name']}")
         return f"Class processed: {data[0]['cobalt_name']}"
 
@@ -340,7 +349,7 @@ def redoSingleModule(guid, staging):
 
         body = response.json()
 
-        print(body)
+        #print(body)
         print(f"Class processed: {data[0]['cobalt_name']}")
         return f"Class processed: {data[0]['cobalt_name']}"
 
@@ -349,14 +358,14 @@ def redoSingleModule(guid, staging):
             response = modify_existing_class(existing_classes)
             return response
         except Exception as e:
-            print(f"Error: {e}")
-            sendDiscordAlert(f"Error: {e}")
+            print(f"Error [Existing Push]: {e}")
+            sendDiscordAlert(f"Error [Existing Push]: {e}")
             return e
     elif len(featured_classes) > 0:
         try:
             response = modify_featured_class(featured_classes)
             return response
         except Exception as e:
-            print(f"Error: {e}")
-            sendDiscordAlert(f"Error: {e}")
+            print(f"Error [Featured Push]: {e}")
+            sendDiscordAlert(f"Error [Featured Push]: {e}")
             return e
