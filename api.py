@@ -25,7 +25,7 @@ class RealTimeEmiter:
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = config['SECRET_KEY']
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode="eventlet")
 
 @app.route("/", methods=["GET", "POST"])
 def form():
