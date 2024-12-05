@@ -2,10 +2,12 @@ from flask import Flask, request, render_template
 from flask_socketio import SocketIO, emit
 import re, sys
 import requests
+import eventlet
 from dotenv import dotenv_values
 from redoSingleModule import redoSingleModule
 from newClassSingleModule import newClassSingle
 from newMeetSingleModule import newMeetSingle
+eventlet.monkey_patch()
 
 config = dotenv_values(".env")
 
