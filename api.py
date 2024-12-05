@@ -1,6 +1,3 @@
-import eventlet
-eventlet.monkey_patch()
-
 from flask import Flask, request, render_template
 from flask_socketio import SocketIO, emit
 import re, sys
@@ -25,7 +22,7 @@ class RealTimeEmiter:
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = config['SECRET_KEY']
-socketio = SocketIO(app, async_mode="eventlet")
+socketio = SocketIO(app, async_mode="gevent")
 
 @app.route("/", methods=["GET", "POST"])
 def form():
