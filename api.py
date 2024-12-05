@@ -26,8 +26,6 @@ socketio = SocketIO(app, async_mode="gevent")
 
 @app.route("/", methods=["GET", "POST"])
 def form():
-    if request.remote_addr != '209.160.229.114':
-        abort(403)  # Forbidden
     return render_template("form_with_output.html")
 
 @app.route('/api/redo/<guid>', methods=['GET'])
