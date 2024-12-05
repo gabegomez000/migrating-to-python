@@ -1,4 +1,5 @@
 from api import app
+from api import socketio
 
 if __name__ == "__main__":
-    app.run()
+    socketio.run(app)
