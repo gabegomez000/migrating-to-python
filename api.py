@@ -155,4 +155,4 @@ def handle_form(data):
         emit("update_output", {"output": "All done!"})
 
 if __name__ == '__main__':
-    socketio.run(app)
+    socketio.run(app, port=8050)
