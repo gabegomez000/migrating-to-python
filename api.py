@@ -1,4 +1,7 @@
-from flask import Flask, request, render_template, abort
+from flask import Flask, request, render_template, redirect, url_for, Response
+from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask_socketio import SocketIO, emit
 import re, sys
 import requests
@@ -22,11 +25,45 @@ class RealTimeEmiter:
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = config['SECRET_KEY']
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Optional, to suppress a warning
+db = SQLAlchemy(app)
 socketio = SocketIO(app)
 
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(user_id)
+
 @app.route("/", methods=["GET", "POST"])
+@login_required
 def form():
     return render_template("form_with_output.html")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == 'POST':
+        # Replace with actual authentication logic
+        username = request.form['username']
+        password = request.form['password']
+
+        user = User.query.filter_by(username=username).first()
+
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            return redirect("/")
+        else:
+            return Response('Invalid credentials', 401)
+    return render_template("login.html")
 
 @app.route('/api/redo/<guid>', methods=['GET'])
 def redoClass(guid):
