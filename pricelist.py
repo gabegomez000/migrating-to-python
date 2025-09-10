@@ -232,8 +232,32 @@ def getVenues(url):
         'slug': 'JTHS MIAMI Boardroom'
     })
 
+    venuesLite.append({
+        'id': 4694,
+        'name': 'MIAMI Global HQ - The Flagler Room',
+        'slug': 'MIAMI Global HQ - The Flagler Room'
+    })
+
+    venuesLite.append({
+        'id': 4694,
+        'name': 'MIAMI Global HQ -  Tuttle Center',
+        'slug': 'MIAMI Global HQ -  Tuttle Center'
+    })
+    venuesLite.append({
+        'id': 4694,
+        'name': 'MIAMI Global HQ - Conference Center of the America',
+        'slug': 'MIAMI Global HQ - Conference Center of the America'
+    })
+    venuesLite.append({
+        'id': 4694,
+        'name': 'Miami Global HQ - Terrace 5th floor',
+        'slug': 'Miami Global HQ - Terrace 5th floor'
+    })
+    
     # print(data)
 
     # Save the data to a file
     with open('venues.json', 'w') as f:
         f.write(json.dumps(venuesLite))
+
+getVenues(config['WORDPRESS_URL'])

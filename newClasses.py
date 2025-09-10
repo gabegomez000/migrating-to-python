@@ -160,32 +160,45 @@ def newClasses():
                 obj['cobalt_LocationId'] = []
 
             #
-            # Set syling for the class based on location
+            # Set styling for the class based on location
             #
 
-            location_mapping = {
-                "MIAMI HQ": "#798e2d",
-                "West Broward Sawgrass Office": "#0082c9",
-                "Coral Gables Office": "#633e81",
-                "JTHS MIAMI Training Room (Jupiter)": "#005962",
-                "Northwestern Dade": "#9e182f",
-                "Northwestern Dade Office": "#9e182f",
-                "NE Broward Office-Ft. Lauderdale": "#f26722",
-                "Aventura Office": "#000000"
+            print(obj['cobalt_LocationId'])
+
+            # use a mapping instead of match/case to avoid Python version and type issues
+            location_color_map = {
+                127640: '#798e2d',
+                123527: '#798e2d',
+                123525: '#798e2d',
+                123523: '#798e2d',
+                4694:   '#798e2d',
+                120695: '#f26722',
+                120675: '#121212',
+                22099:  '#121212',
+                78282:  '#005962',
+                4718:   '#005962',
+                4735:   '#9e182f',
+                4720:   '#9e182f',
+                4698:   '#0082c9',
             }
 
-            default_style = ""  # Default style value
+            # Safely extract the first venue id and try to normalize it to int for lookup
+            loc_id = None
+            if obj['cobalt_LocationId']:
+                try:
+                    loc_id = int(obj['cobalt_LocationId'][0])
+                except (ValueError, TypeError):
+                    loc_id = obj['cobalt_LocationId'][0]
 
-            style = location_mapping.get(cobalt_location_id, default_style)
+            obj['color'] = location_color_map.get(loc_id)
 
-            #print(f'Looking up location style for {obj["cobalt_name"]} - {cobalt_location_id} - {style}')
+            print(f"Color: {obj.get('color', 'No color set')}")
 
-            if obj['cobalt_LocationId'] != [] and style != "":
-                #print('Applying style')
-                obj['cobalt_name'] = f"<span style=\"color:{style};\">{obj['cobalt_name']}</span>"
+            # apply color-safe: use .get to avoid KeyError
+            if obj.get('color'):
+                obj['cobalt_name'] = f"<span style=\"color:{obj['color']};\">{obj['cobalt_name']}</span>"
             else:
                 obj['cobalt_name'] = obj['cobalt_name']
-
 
             #set outside provider link
             if obj['cobalt_OutsideProvider'] == 'true':

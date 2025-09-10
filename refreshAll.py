@@ -58,7 +58,7 @@ console_logger = logging.getLogger('Console')
 if os.environ.get('STAGING') == 'true':
     config['WORDPRESS_URL'] = config['STAGING_URL']
 
-#update pricelist
+# # update pricelist
 pricelist()
 getTags(config['WORDPRESS_URL'])
 getCategories(config['WORDPRESS_URL'])
@@ -195,13 +195,7 @@ def process_classes(classes):
 
         resultVenue = [ven['id'] for ven in venueSearch if ven['name'] == cobalt_location_id]
 
-        # print(resultVenue)
-        # print(cobalt_location_id)
-
-        #print(f"Venue found: {resultVenue}")
-
         if len(resultVenue) > 0:
-            print
             obj['cobalt_LocationId'] = resultVenue
         elif cobalt_location_id is None or cobalt_location_id == "null" or cobalt_location_id == "":
             obj['cobalt_LocationId'] = []
@@ -210,33 +204,45 @@ def process_classes(classes):
             obj['cobalt_LocationId'] = []
 
         #
-        # Set syling for the class based on location
+        # Set styling for the class based on location
         #
 
-        location_mapping = {
-            "MIAMI HQ": "#798e2d",
-            "West Broward Sawgrass Office": "#0082c9",
-            "Coral Gables Office": "#633e81",
-            "JTHS MIAMI Training Room (Jupiter)": "#005962",
-            "Northwestern Dade": "#9e182f",
-            "Northwestern Dade Office": "#9e182f",
-            "NE Broward Office-Ft. Lauderdale": "#f26722",
-            "Aventura Office": "#000000",
-            "null": "",
+        print(obj['cobalt_LocationId'])
+
+        # use a mapping instead of match/case to avoid Python version and type issues
+        location_color_map = {
+            127640: '#798e2d',
+            123527: '#798e2d',
+            123525: '#798e2d',
+            123523: '#798e2d',
+            4694:   '#798e2d',
+            120695: '#f26722',
+            120675: '#121212',
+            22099:  '#121212',
+            78282:  '#005962',
+            4718:   '#005962',
+            4735:   '#9e182f',
+            4720:   '#9e182f',
+            4698:   '#0082c9',
         }
 
-        default_style = ""  # Default style value
+        # Safely extract the first venue id and try to normalize it to int for lookup
+        loc_id = None
+        if obj['cobalt_LocationId']:
+            try:
+                loc_id = int(obj['cobalt_LocationId'][0])
+            except (ValueError, TypeError):
+                loc_id = obj['cobalt_LocationId'][0]
 
-        style = location_mapping.get(cobalt_location_id, default_style)
+        obj['color'] = location_color_map.get(loc_id)
 
-        #print(f'Looking up location style for {obj["cobalt_name"]} - {cobalt_location_id} - {style}')
+        print(f"Color: {obj.get('color', 'No color set')}")
 
-        if obj['cobalt_LocationId'] != [] and style != "":
-            #print('Applying style')
-            obj['cobalt_name'] = f"<span style=\"color:{style};\">{obj['cobalt_name']}</span>"
+        # apply color-safe: use .get to avoid KeyError
+        if obj.get('color'):
+            obj['cobalt_name'] = f"<span style=\"color:{obj['color']};\">{obj['cobalt_name']}</span>"
         else:
             obj['cobalt_name'] = obj['cobalt_name']
-
 
         #set outside provider link
         if obj['cobalt_OutsideProvider'] == 'true':
@@ -271,7 +277,7 @@ def check_if_exists(classes):
         if obj['ramcosub_calendar_override'] == 'false':
             response = requests.get(f"{config['WORDPRESS_URL']}/events/by-slug/{obj['cobalt_classId']}")
 
-            print(f'Checking {obj['cobalt_name']} - {obj['cobalt_classId']} - {response.status_code}')
+            print(f'Checking {obj["cobalt_name"]} - {obj["cobalt_classId"]} - {response.status_code}')
 
             if response.status_code == 200:
 
@@ -283,12 +289,9 @@ def check_if_exists(classes):
                 response_categories = [response['id'] for response in response['categories']]
                 all_categories = obj['categories'] + response_categories
 
-                #print(all_tags)
-
                 obj['sticky']= response['sticky']
                 obj['featured']= response['featured']
 
-                #print(f'Checking {obj['cobalt_name']} - {response['url']}')
                 filtered_tags = list(set(all_tags))
                 filtered_categories = list(set(all_categories))
 
@@ -307,18 +310,16 @@ def check_if_exists(classes):
                 obj['categories'] = catFix
 
                 if response["image"] == False:
-                    #obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
                     print("No class image!")
                     existing_classes.append(obj)
                 else:
-                    #obj['cobalt_cobalt_tag_cobalt_class'] = filtered_tags
                     obj['featuredImage'] = response['image']['url']
                     print(response['image']['url'])
                     featured_classes.append(obj)
             else:
                 new_classes.append(obj)
         else:
-            print(f'Sending {obj['cobalt_name']} - {obj['cobalt_classId']} to the shadowrealm')
+            print(f'Sending {obj["cobalt_name"]} - {obj["cobalt_classId"]} to the shadowrealm')
             class_shadowrealm.append(obj)
 
 #get response
@@ -339,8 +340,6 @@ print(f"New Classes: {len(new_classes)}")
 print(f"Shadowrealm Classes: {len(class_shadowrealm)}")
 
 async def submit_existing_class(data):
-        #console_logger.debug(data)
-
     print(f"Submitting existing class: {data['cobalt_classId']} - {data['cobalt_LocationId']} - {data['cobalt_name']} - {data['cobalt_price']} - {data['cobalt_cobalt_tag_cobalt_class']}")
 
     ramco_class = {
@@ -366,8 +365,7 @@ async def submit_existing_class(data):
     if data['cobalt_LocationId'] != []:
         ramco_class["venue"] = data['cobalt_LocationId']
 
-    #payload = urlencode(ramco_class)
-    print(payload)
+    #print(ramco_class)
     url = f"{config['WORDPRESS_URL']}/events/by-slug/{data['cobalt_classId']}"
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -402,8 +400,6 @@ async def submit_featured_class(data):
     if data['cobalt_LocationId'] != []:
         ramcoClass["venue"] = data['cobalt_LocationId']
 
-
-    #set url and headers
     payload = urlencode(ramcoClass)
     
     url = f"{config['WORDPRESS_URL']}/events/by-slug/{data['cobalt_classId']}"
@@ -419,9 +415,7 @@ async def submit_featured_class(data):
     else:
         console_logger.error(response.text)
         send_slack_message(response.text)
-
-
-    #print(response)
+#print(response)
 
 async def sumbit_e_classes(data):
     for obj in data:
