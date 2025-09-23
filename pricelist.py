@@ -245,6 +245,11 @@ def getVenues(url):
     })
     venuesLite.append({
         'id': 4694,
+        'name': 'MIAMI Global HQ - Tuttle Center',
+        'slug': 'MIAMI Global HQ - Tuttle Center'
+    })
+    venuesLite.append({
+        'id': 4694,
         'name': 'MIAMI Global HQ - Conference Center of the America',
         'slug': 'MIAMI Global HQ - Conference Center of the America'
     })
