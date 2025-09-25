@@ -258,6 +258,11 @@ def getVenues(url):
         'name': 'Miami Global HQ - Terrace 5th floor',
         'slug': 'Miami Global HQ - Terrace 5th floor'
     })
+    venuesLite.append({
+        'id': 4694,
+        'name': 'MIAMI Global HQ',
+        'slug': 'MIAMI Global HQ'
+    })
     
     # print(data)
 
