@@ -77,9 +77,6 @@ def redoSingleModule(guid, staging):
         else:
             obj['cobalt_price'] = '0.0000'
 
-        #remove decimals
-        obj['cobalt_price'] = obj['cobalt_price'][:-2]
-
         #set price to blank if outside provider
         if obj['cobalt_OutsideProvider'] == 'true':
             obj['cobalt_price'] = ''

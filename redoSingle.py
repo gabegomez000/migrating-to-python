@@ -99,6 +99,7 @@ else:
     obj['cobalt_price'] = '0.0000'
 
 #remove decimals
+print(f"Original price: {obj['cobalt_price']}")
 obj['cobalt_price'] = obj['cobalt_price'][:-2]
 
 #set price to blank if outside provider
