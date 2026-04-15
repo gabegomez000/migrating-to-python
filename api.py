@@ -5,12 +5,20 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_socketio import SocketIO, emit
 import re, sys
 import requests
-from dotenv import dotenv_values
+from config_loader import load_config
 from redoSingleModule import redoSingleModule
 from newClassSingleModule import newClassSingle
 from newMeetSingleModule import newMeetSingle
 
-config = dotenv_values(".env")
+config = load_config()
+
+_guid_regex = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.I)
+
+
+def _validate_guid(guid):
+    if _guid_regex.match(guid) is None:
+        return "Invalid GUID format", 400
+    return None
 
 class RealTimeEmiter:
     def __init__(self, socketio, event_name):
@@ -67,11 +75,9 @@ def login():
 
 @app.route('/api/redo/<guid>', methods=['GET'])
 def redoClass(guid):
-
-    guid_regex = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.I)
-
-    if guid_regex.match(guid) is None:
-        return "Invalid GUID format", 400
+    err = _validate_guid(guid)
+    if err:
+        return err
 
     try:
         response = redoSingleModule(guid, True)
@@ -83,11 +89,9 @@ def redoClass(guid):
     
 @app.route('/api/new/<guid>', methods=['GET'])
 def newClass(guid):
-
-    guid_regex = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.I)
-
-    if guid_regex.match(guid) is None:
-        return "Invalid GUID format", 400
+    err = _validate_guid(guid)
+    if err:
+        return err
 
     try:
         response = newClassSingle(guid, True)
@@ -99,11 +103,9 @@ def newClass(guid):
     
 @app.route('/api/new/meeting/<guid>', methods=['POST'])
 def newMeeting(guid):
-
-    guid_regex = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.I)
-
-    if guid_regex.match(guid) is None:
-        return "Invalid GUID format", 400
+    err = _validate_guid(guid)
+    if err:
+        return err
 
     try:
         response = newMeetSingle(guid, True)

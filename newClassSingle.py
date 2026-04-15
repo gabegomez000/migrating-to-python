@@ -5,13 +5,10 @@ import pytz
 import os
 import base64
 from urllib.parse import urlencode
-from dotenv import dotenv_values
 
-config = dotenv_values(".env")
+from config_loader import load_config
 
-# set up wordpress url if staging is true in env
-if os.environ.get('STAGING') == 'true':
-    config['WORDPRESS_URL'] = config['STAGING_URL']
+config = load_config()
 
 def push_classes():
     with open('logs/logs.txt', 'a') as log_file:
