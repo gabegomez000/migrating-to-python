@@ -7,7 +7,7 @@ from config_loader import load_config
 from ramco_client import fetch_entities, CLASS_ATTRIBUTES
 from event_processor import process_class
 from wordpress_client import (
-    load_reference_data, build_class_payload, submit_event_create,
+    load_reference_data, build_class_payload, submit_event_create, check_event_exists,
 )
 
 
@@ -51,7 +51,9 @@ def newClasses():
     print(f"New Classes: {len(new_classes)}")
 
     async def submit_new_class(data):
-        print(f"Submitting new class: {data['cobalt_classId']} - {data['cobalt_name']}")
+        if check_event_exists(config, data['cobalt_classId']):
+            print(f"Skipping (already exists): {data['cobalt_name']} - {data['cobalt_classId']}")
+            return
         payload = build_class_payload(data)
         response = submit_event_create(config, payload)
         if response.status_code == 201:
