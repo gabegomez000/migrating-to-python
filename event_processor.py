@@ -30,20 +30,30 @@ _CLASS_REGISTRATION_BASE = (
     "?ReturnUrl=%2FEducation%2FRegistration%2FDetails.aspx%3Fcid%3D"
 )
 
+_RWORLD_CLASS_REGISTRATION_BASE = (
+    "https://miamiportal.ramcoams.net/Education/Registration/Details.aspx?cid="
+)
+
+
 _MEETING_REGISTRATION_BASE = (
     "https://miamiportal.ramcoams.net/Authentication/DefaultSingleSignon.aspx"
     "?ReturnUrl=%2FEducation%2FRegistration%2FMeetingDetails.aspx%3Fmid%3D"
 )
 
 _BUTTON_STYLE = (
-    "background-color: #4CAF50;border: none;color: white;padding: 15px 32px;"
+    "background-color: #4CAF50;border: none;color: white;padding: 15px 32px; margin-top: 10px;"
+    "text-align: center;text-decoration: none;display: inline-block;font-size: 16px;"
+)
+
+_RWORLD_BUTTON_STYLE = (
+    "background-color: #31C4B8;border: none;color: white;padding: 15px 32px; margin-top: 10px;"
     "text-align: center;text-decoration: none;display: inline-block;font-size: 16px;"
 )
 
 
-def _register_button(url):
+def _register_button(url, style, button_text="Register Now"):
     return (
-        f'<br><input style="{_BUTTON_STYLE}" type="button" value="Register Now" '
+        f'<br><input style="{style}" type="button" value="{button_text}" '
         f"onclick=\"window.location.href='{url}'\" />"
     )
 
@@ -181,9 +191,12 @@ def process_class(obj, prices, tag_search, cat_search, venue_search):
     # Description — register button
     if obj.get('cobalt_OutsideProvider') == 'true':
         reg_url = obj.get('cobalt_OutsideProviderLink', '')
+        rworld_url = obj.get('cobalt_OutsideProviderLink', '')
     else:
         reg_url = _CLASS_REGISTRATION_BASE + obj['cobalt_classId']
-    obj['cobalt_Description'] = (obj.get('cobalt_Description') or '') + _register_button(reg_url)
+        rworld_url = _RWORLD_CLASS_REGISTRATION_BASE + obj['cobalt_classId']
+    obj['cobalt_Description'] = (obj.get('cobalt_Description') or '') + _register_button(reg_url, _BUTTON_STYLE, button_text="MIAMI Register Now")
+    obj['cobalt_Description'] += _register_button(rworld_url, _RWORLD_BUTTON_STYLE, button_text="R-World Register Now")
 
     # Description — instructor prefix
     instructors = obj.get('cobalt_cobalt_classinstructor_cobalt_class', [])
