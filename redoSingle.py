@@ -29,6 +29,7 @@ except Exception as e:
 
 try:
     process_class(data, prices, tag_search, cat_search, venue_search)
+    print(data)
 except Exception as e:
     sendDiscordAlert(f"Error: {e}")
     print(f"Error: {e}")
@@ -37,7 +38,7 @@ except Exception as e:
 # Must use inline request to detect empty-body 200 (shadowrealm check)
 headers = get_wp_headers(config)
 slug = data['cobalt_classId']
-wp_url = f"{config['WORDPRESS_URL']}/wp-json/tribe/events/v1/events/by-slug/{slug}"
+wp_url = f"{config['WORDPRESS_URL']}/events/by-slug/{slug}"
 response = requests.get(wp_url, headers=headers)
 
 if response.status_code != 200:

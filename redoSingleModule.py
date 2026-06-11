@@ -80,6 +80,7 @@ def redoSingleModule(guid, staging):
     def modify_existing_class(data):
         print(f"Submitting existing class: {data[0]['cobalt_classId']} - {data[0]['cobalt_LocationId']} - {data[0]['cobalt_name']} - {data[0]['cobalt_price']} - {data[0]['cobalt_cobalt_tag_cobalt_class']}")
         payload = build_class_payload(data[0])
+        print(f"Payload: {payload}")
         submit_event_update(config, data[0]['cobalt_classId'], payload)
         print(f"Class processed: {data[0]['cobalt_name']}")
         return f"Class processed: {data[0]['cobalt_name']}"

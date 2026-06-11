@@ -31,7 +31,8 @@ _CLASS_REGISTRATION_BASE = (
 )
 
 _RWORLD_CLASS_REGISTRATION_BASE = (
-    "https://miamiportal.ramcoams.net/Education/Registration/Details.aspx?cid="
+    "https://miamiportal.ramcoams.net/Login.aspx"
+    "?ReturnUrl=%2fEducation%2fRegistration%2fDetails.aspx%3fcid%3d"
 )
 
 

@@ -44,15 +44,24 @@ def pricelist():
 
     r = requests.post(config['API_URL'], data=payload)
 
+    pricelist = []
+    data = r.json()
     # Parse the data
-    data = json.loads(r.text)
-    data = data['Data']
+    pricelist.extend(data['Data'])
 
-    # print(data)
+    # print(data['StreamToken'])
+
+    while "StreamToken" in data and data['StreamToken']:
+        payload['StreamToken'] = data['StreamToken']
+        r = requests.post(config['API_URL'], data=payload)
+        data = json.loads(r.text)
+        pricelist.extend(data['Data'])
+
+    #print(pricelist)
 
     # Save the data to a file
     with open('pricelist.json', 'w') as f:
-        f.write(json.dumps(data))
+        f.write(json.dumps(pricelist))
 
 def getTags(url):
 
@@ -271,3 +280,4 @@ def getVenues(url):
         f.write(json.dumps(venuesLite))
 
 getVenues(config['WORDPRESS_URL'])
+pricelist()
