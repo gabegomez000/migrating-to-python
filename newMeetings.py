@@ -2,7 +2,7 @@ import asyncio
 import datetime
 
 from pricelist import pricelist, getTags, getCategories, getVenues
-from alerts import sendDiscordAlert
+from alerts import sendNtfyAlert
 from config_loader import load_config
 from ramco_client import fetch_entities, MEETING_ATTRIBUTES
 from event_processor import process_meeting
@@ -29,7 +29,7 @@ def newMeetings():
         )
     except Exception as e:
         print(e)
-        sendDiscordAlert(e)
+        sendNtfyAlert(str(e), title="NewMeetings: Error fetching new meetings")
         return
 
     if not meetings:
@@ -44,7 +44,7 @@ def newMeetings():
             process_meeting(obj, prices, tag_search, cat_search, venue_search)
     except Exception as e:
         print(e)
-        sendDiscordAlert(e)
+        sendNtfyAlert(str(e), title="NewMeetings: Error processing meetings")
 
     new_meetings = list(meetings)
 
@@ -59,7 +59,7 @@ def newMeetings():
         else:
             msg = f"Error submitting meeting: {data['cobalt_name']} - {response.text} - {response.status_code}"
             print(msg)
-            sendDiscordAlert(msg)
+            sendNtfyAlert(msg, title="NewMeetings: Error submitting meeting")
 
     async def submit_all(items):
         for obj in items:
@@ -71,5 +71,5 @@ def newMeetings():
 try:
     newMeetings()
 except Exception as e:
-    sendDiscordAlert(e)
+    sendNtfyAlert(str(e), title="NewMeetings: Unhandled Error")
     print(e)

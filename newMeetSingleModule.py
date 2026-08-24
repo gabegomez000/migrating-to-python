@@ -1,5 +1,5 @@
 from pricelist import pricelist
-from alerts import sendDiscordAlert
+from alerts import sendNtfyAlert
 from config_loader import load_config
 from logging_setup import setup_logging
 from ramco_client import fetch_entity, MEETING_ATTRIBUTES
@@ -28,7 +28,7 @@ def newMeetSingle(guid, staging):
     try:
         process_meeting(data, prices, tag_search, cat_search, venue_search)
     except Exception as e:
-        sendDiscordAlert(f"Error: {e}")
+        sendNtfyAlert(str(e), title="NewMeetSingleModule: Error processing meeting")
         print(f"Error: {e}")
         return e
 
@@ -57,7 +57,7 @@ def newMeetSingle(guid, staging):
     try:
         check_if_exists(data)
     except Exception as e:
-        sendDiscordAlert(f"Error: {e}")
+        sendNtfyAlert(str(e), title="NewMeetSingleModule: Error checking if meeting exists")
         print(f"Error: {e}")
         return e
 
@@ -76,9 +76,9 @@ def newMeetSingle(guid, staging):
         else:
             msg = f"Error submitting meeting: {obj['cobalt_name']} - {response.text} - {response.status_code}"
             print(msg)
-            sendDiscordAlert(msg)
+            sendNtfyAlert(msg, title="NewMeetSingleModule: Error submitting meeting")
             return msg
     except Exception as e:
-        sendDiscordAlert(f"Error: {e}")
+        sendNtfyAlert(str(e), title="NewMeetSingleModule: Error submitting meeting")
         print(f"Error: {e}")
         return e

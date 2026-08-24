@@ -2,7 +2,7 @@ import asyncio
 import datetime
 
 from pricelist import pricelist, getTags, getCategories, getVenues
-from alerts import sendDiscordAlert
+from alerts import sendNtfyAlert
 from config_loader import load_config
 from ramco_client import fetch_entities, CLASS_ATTRIBUTES
 from event_processor import process_class
@@ -29,7 +29,7 @@ def newClasses():
         )
     except Exception as e:
         print(e)
-        sendDiscordAlert(e)
+        sendNtfyAlert(str(e), title="NewClasses: Error fetching new classes")
         return
 
     if not classes:
@@ -44,7 +44,7 @@ def newClasses():
             process_class(obj, prices, tag_search, cat_search, venue_search)
     except Exception as e:
         print(e)
-        sendDiscordAlert(e)
+        sendNtfyAlert(str(e), title="NewClasses: Error processing classes")
 
     new_classes = [obj for obj in classes if obj['ramcosub_calendar_override'] == 'false']
 
@@ -61,7 +61,7 @@ def newClasses():
         else:
             msg = f"Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}"
             print(msg)
-            sendDiscordAlert(msg)
+            sendNtfyAlert(msg, title="Error submitting class")
 
     async def submit_all(items):
         for obj in items:
@@ -73,5 +73,5 @@ def newClasses():
 try:
     newClasses()
 except Exception as e:
-    sendDiscordAlert(e)
+    sendNtfyAlert(str(e), title="NewClasses: Unhandled Error")
     print(e)

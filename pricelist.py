@@ -201,6 +201,7 @@ def getVenues(url):
         headers=headers,
     )
 
+    print(r)
     data = r.json()
 
     if 'total_pages' in data:

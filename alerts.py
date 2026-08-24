@@ -3,20 +3,21 @@ from dotenv import dotenv_values
 
 config = dotenv_values(".env")
 
-def sendDiscordAlert(message):
+def sendNtfyAlert(message, title="Script Alert"):
+    url = config['NTFY_URL']
+    token = config['NTFY_TOKEN']
 
-    url = config['DISCORD_HOOK'] #webhook url, from here: https://i.imgur.com/f9XnAew.png
-
-    #for all params, see https://discordapp.com/developers/docs/resources/webhook#execute-webhook
-    data = {
-        "content" : message
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Title": title
     }
 
-    result = requests.post(url, json = data)
+    # ntfy expects raw text in the body, not a JSON object
+    result = requests.post(url, data=message, headers=headers)
 
     try:
         result.raise_for_status()
     except requests.exceptions.HTTPError as err:
-        print(err)
+        print(f"Failed to send ntfy alert: {err}")
     else:
-        print("Payload delivered successfully, code {}.".format(result.status_code))
+        print(f"Payload delivered successfully, code {result.status_code}.")

@@ -2,7 +2,7 @@ import asyncio
 import datetime
 
 from pricelist import pricelist, getTags, getCategories, getVenues
-from alerts import sendDiscordAlert
+from alerts import sendNtfyAlert
 from config_loader import load_config
 from ramco_client import fetch_entities, CLASS_ATTRIBUTES
 from event_processor import process_class
@@ -26,7 +26,7 @@ def incremental():
         classes = fetch_entities(config, 'cobalt_class', f'modifiedon<ge>{date_start}', CLASS_ATTRIBUTES)
     except Exception as e:
         print(e)
-        sendDiscordAlert(e)
+        sendNtfyAlert(str(e), title="Incremental: Error fetching classes")
         return
 
     if not classes:
@@ -41,7 +41,7 @@ def incremental():
             process_class(obj, prices, tag_search, cat_search, venue_search)
     except Exception as e:
         print(e)
-        sendDiscordAlert(e)
+        sendNtfyAlert(str(e), title="Incremental: Error processing classes")
 
     existing_classes = []
     featured_classes = []
@@ -74,7 +74,7 @@ def incremental():
     try:
         check_if_exists(classes)
     except Exception as e:
-        sendDiscordAlert(e)
+        sendNtfyAlert(str(e), title="Incremental: Error checking if class exists")
         print(e)
 
     print(f"Existing Classes: {len(existing_classes)}")
@@ -105,5 +105,5 @@ def incremental():
 try:
     incremental()
 except Exception as e:
-    sendDiscordAlert(e)
+    sendNtfyAlert(str(e), title="Incremental: Unhandled Error")
     print(e)

@@ -1,7 +1,5 @@
 import datetime
 
-from alerts import sendDiscordAlert
-
 # Order IDs that should always be excluded from price lookups
 _EXCLUDED_ORDER_IDS = {
     '8d6bb524-f1d8-41ad-8c21-ae89d35d4dc3',

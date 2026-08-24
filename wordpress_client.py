@@ -3,7 +3,7 @@ import json
 import requests
 from urllib.parse import urlencode
 
-from alerts import sendDiscordAlert
+from alerts import sendNtfyAlert
 
 
 def load_reference_data():

@@ -3,7 +3,7 @@ import datetime
 
 from logging_setup import setup_logging
 from pricelist import pricelist, getTags, getCategories, getVenues
-from alerts import sendDiscordAlert
+from alerts import sendNtfyAlert
 from config_loader import load_config
 from ramco_client import fetch_entities, CLASS_ATTRIBUTES
 from event_processor import process_class
@@ -30,7 +30,7 @@ try:
     )
 except Exception as e:
     print(e)
-    sendDiscordAlert(e)
+    sendNtfyAlert(str(e), title="NewClassRedo: Error fetching new classes")
     raise
 
 prices, tag_search, cat_search, venue_search = load_reference_data()
@@ -41,7 +41,7 @@ try:
         process_class(obj, prices, tag_search, cat_search, venue_search)
 except Exception as e:
     print(e)
-    sendDiscordAlert(e)
+    sendNtfyAlert(str(e), title="NewClassRedo: Error processing classes")
 
 new_classes = [obj for obj in classes if obj['ramcosub_calendar_override'] == 'false']
 
@@ -60,7 +60,7 @@ async def submit_new_class(data):
     else:
         msg = f"Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}"
         print(msg)
-        sendDiscordAlert(msg)
+        sendNtfyAlert(msg, title="NewClassRedo: Error submitting class")
 
 
 async def submit_all():

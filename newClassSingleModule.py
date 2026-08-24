@@ -1,5 +1,5 @@
 from pricelist import pricelist, getTags, getCategories, getVenues
-from alerts import sendDiscordAlert
+from alerts import sendNtfyAlert
 from config_loader import load_config
 from logging_setup import setup_logging
 from ramco_client import fetch_entity, CLASS_ATTRIBUTES
@@ -30,7 +30,7 @@ def newClassSingle(guid, staging):
     try:
         process_class(data, prices, tag_search, cat_search, venue_search)
     except Exception as e:
-        sendDiscordAlert(f"Error: {e}")
+        sendNtfyAlert(str(e), title="NewClassSingleModule: Error processing class")
         print(f"Error: {e}")
         return e
 
@@ -64,7 +64,7 @@ def newClassSingle(guid, staging):
     try:
         check_if_exists(data)
     except Exception as e:
-        sendDiscordAlert(f"Error: {e}")
+        sendNtfyAlert(str(e), title="NewClassSingleModule: Error checking if class exists")
         print(f"Error: {e}")
         return e
 
@@ -83,9 +83,9 @@ def newClassSingle(guid, staging):
         else:
             msg = f"Error submitting class: {obj['cobalt_name']} - {response.text} - {response.status_code}"
             print(msg)
-            sendDiscordAlert(msg)
+            sendNtfyAlert(msg, title="NewClassSingleModule: Error submitting class")
             return msg
     except Exception as e:
-        sendDiscordAlert(f"Error: {e}")
+        sendNtfyAlert(str(e), title="NewClassSingleModule: Error submitting class")
         print(f"Error: {e}")
         return e

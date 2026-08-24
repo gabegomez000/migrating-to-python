@@ -2,7 +2,7 @@ import asyncio
 import datetime
 
 from pricelist import pricelist, getTags, getCategories, getVenues
-from alerts import sendDiscordAlert
+from alerts import sendNtfyAlert
 from config_loader import load_config
 from ramco_client import fetch_entities, MEETING_ATTRIBUTES
 from event_processor import process_meeting
@@ -26,7 +26,7 @@ def incremental():
         meetings = fetch_entities(config, 'cobalt_meeting', f'modifiedon<ge>{date_start}', MEETING_ATTRIBUTES)
     except Exception as e:
         print(e)
-        sendDiscordAlert(e)
+        sendNtfyAlert(str(e), title="IncrementalMeetings: Error fetching meetings")
         return
 
     if not meetings:
@@ -41,7 +41,7 @@ def incremental():
             process_meeting(obj, prices, tag_search, cat_search, venue_search)
     except Exception as e:
         print(e)
-        sendDiscordAlert(e)
+        sendNtfyAlert(str(e), title="IncrementalMeetings: Error processing meetings")
 
     existing_meetings = []
     featured_meetings = []
@@ -69,7 +69,7 @@ def incremental():
     try:
         check_if_exists(meetings)
     except Exception as e:
-        sendDiscordAlert(e)
+        sendNtfyAlert(str(e), title="IncrementalMeetings: Error checking if meeting exists")
         print(e)
 
     print(f"Existing Meetings: {len(existing_meetings)}")
@@ -99,5 +99,5 @@ def incremental():
 try:
     incremental()
 except Exception as e:
-    sendDiscordAlert(e)
+    sendNtfyAlert(str(e), title="IncrementalMeetings: Unhandled Error")
     print(e)

@@ -1,7 +1,7 @@
 import requests
 
 from pricelist import pricelist
-from alerts import sendDiscordAlert
+from alerts import sendNtfyAlert
 from config_loader import load_config
 from logging_setup import setup_logging
 from ramco_client import fetch_entity, CLASS_ATTRIBUTES
@@ -31,7 +31,7 @@ try:
     process_class(data, prices, tag_search, cat_search, venue_search)
     print(data)
 except Exception as e:
-    sendDiscordAlert(f"Error: {e}")
+    sendNtfyAlert(str(e), title="RedoSingle: Error processing class")
     print(f"Error: {e}")
     raise
 

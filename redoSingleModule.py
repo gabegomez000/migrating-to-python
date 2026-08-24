@@ -1,7 +1,7 @@
 import traceback
 import requests
 from pricelist import pricelist, getTags, getCategories, getVenues
-from alerts import sendDiscordAlert
+from alerts import sendNtfyAlert
 from config_loader import load_config
 from ramco_client import fetch_entity, CLASS_ATTRIBUTES
 from event_processor import process_class
@@ -29,7 +29,7 @@ def redoSingleModule(guid, staging):
     try:
         process_class(obj, prices, tag_search, cat_search, venue_search)
     except Exception as e:
-        sendDiscordAlert(f"Error [Class Formatting]: {e}")
+        sendNtfyAlert(str(e), title="RedoSingleModule: Error processing class")
         print(f"Error [Class Formatting]: {e}")
         return e
 
@@ -70,7 +70,7 @@ def redoSingleModule(guid, staging):
     try:
         check_if_exists(obj)
     except Exception as err:
-        sendDiscordAlert(f"Error [Check if Exists]: {err=}, {type(err)=}")
+        sendNtfyAlert(str(err), title="RedoSingleModule: Error checking if class exists")
         print(f"Error [Check if Exists]: {err=}, {type(err)=}")
         traceback.print_exc()
         return err
@@ -96,12 +96,12 @@ def redoSingleModule(guid, staging):
             return modify_existing_class(existing_classes)
         except Exception as e:
             print(f"Error [Existing Push]: {e}")
-            sendDiscordAlert(f"Error [Existing Push]: {e}")
+            sendNtfyAlert(str(e), title="RedoSingleModule: Error pushing existing class")
             return e
     elif len(featured_classes) > 0:
         try:
             return modify_featured_class(featured_classes)
         except Exception as e:
             print(f"Error [Featured Push]: {e}")
-            sendDiscordAlert(f"Error [Featured Push]: {e}")
+            sendNtfyAlert(str(e), title="RedoSingleModule: Error pushing featured class")
             return e

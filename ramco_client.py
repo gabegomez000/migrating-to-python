@@ -1,6 +1,6 @@
 import json
 import requests
-from alerts import sendDiscordAlert
+from alerts import sendNtfyAlert
 
 CLASS_ATTRIBUTES = (
     'cobalt_classbegindate,cobalt_classenddate,cobalt_classid,cobalt_locationid,'
@@ -48,7 +48,7 @@ def fetch_entity(config, entity, guid, attributes):
         data = json.loads(r.text)
         return data['Data']
     except Exception as e:
-        sendDiscordAlert(f"Error [RAMCO API]: {e}")
+        sendNtfyAlert(str(e), title="RAMCO API: Error fetching entity")
         print(f"Error [RAMCO API]: {e}")
         raise
 
@@ -74,6 +74,6 @@ def fetch_entities(config, entity, filter_str, attributes):
         data = json.loads(r.text)
         return data.get('Data', [])
     except Exception as e:
-        sendDiscordAlert(f"Error [RAMCO API]: {e}")
+        sendNtfyAlert(str(e), title="RAMCO API: Error fetching entities")
         print(f"Error [RAMCO API]: {e}")
         raise
