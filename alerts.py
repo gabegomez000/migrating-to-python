@@ -7,17 +7,17 @@ def sendNtfyAlert(message, title="Script Alert"):
     url = config['NTFY_URL']
     token = config['NTFY_TOKEN']
 
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Title": title
+    payload = {
+        "device_key": token,
+        "title": title,
+        "body": message
     }
 
-    # ntfy expects raw text in the body, not a JSON object
-    result = requests.post(url, data=message, headers=headers)
+    result = requests.post(url, json=payload)  # json= sets Content-Type and encodes correctly
 
     try:
         result.raise_for_status()
     except requests.exceptions.HTTPError as err:
-        print(f"Failed to send ntfy alert: {err}")
+        print(f"Failed to send Bark alert: {err}")
     else:
         print(f"Payload delivered successfully, code {result.status_code}.")
