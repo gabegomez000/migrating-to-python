@@ -279,6 +279,3 @@ def getVenues(url):
     # Save the data to a file
     with open('venues.json', 'w') as f:
         f.write(json.dumps(venuesLite))
-
-getVenues(config['WORDPRESS_URL'])
-pricelist()

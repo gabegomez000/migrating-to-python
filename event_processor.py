@@ -39,6 +39,11 @@ _MEETING_REGISTRATION_BASE = (
     "?ReturnUrl=%2FEducation%2FRegistration%2FMeetingDetails.aspx%3Fmid%3D"
 )
 
+_RWORLD_MEETING_REGISTRATION_BASE = (
+    "https://miamiportal.ramcoams.net/Login.aspx"
+    "?ReturnUrl=%2fEducation%2fRegistration%2fMeetingDetails.aspx%3fmid%3d"
+)
+
 _BUTTON_STYLE = (
     "background-color: #4CAF50;border: none;color: white;padding: 15px 32px; margin-top: 10px;"
     "text-align: center;text-decoration: none;display: inline-block;font-size: 16px;"
@@ -268,9 +273,12 @@ def process_meeting(obj, prices, tag_search, cat_search, venue_search):
     # Description — register button
     if obj.get('cobalt_OutsideProvider') == 'true':
         reg_url = obj.get('cobalt_OutsideProviderLink', '')
+        rworld_url = obj.get('cobalt_OutsideProviderLink', '')
     else:
         reg_url = _MEETING_REGISTRATION_BASE + obj['cobalt_meetingId']
-    obj['cobalt_Description'] = (obj.get('cobalt_Description') or '') + _register_button(reg_url)
+        rworld_url = _RWORLD_MEETING_REGISTRATION_BASE + obj['cobalt_meetingId']
+    obj['cobalt_Description'] = (obj.get('cobalt_Description') or '') + _register_button(reg_url, _BUTTON_STYLE, button_text="MIAMI Register Now")
+    obj['cobalt_Description'] += _register_button(rworld_url, _RWORLD_BUTTON_STYLE, button_text="R-World Register Now")
 
     print(
         f"Meeting processed: {obj['cobalt_name']} - {obj['cobalt_meetingId']} - "
