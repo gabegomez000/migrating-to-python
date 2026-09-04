@@ -3,7 +3,7 @@ import datetime
 
 from logging_setup import setup_logging
 from pricelist import pricelist, getTags, getCategories, getVenues
-from alerts import sendDiscordAlert
+from alerts import sendNtfyAlert
 from config_loader import load_config
 from ramco_client import fetch_entities, CLASS_ATTRIBUTES
 from event_processor import process_class
@@ -31,7 +31,7 @@ try:
     )
 except Exception as e:
     print(e)
-    sendDiscordAlert(e)
+    sendNtfyAlert(e)
     raise
 
 prices, tag_search, cat_search, venue_search = load_reference_data()
@@ -42,7 +42,7 @@ try:
         process_class(obj, prices, tag_search, cat_search, venue_search)
 except Exception as e:
     print(e)
-    sendDiscordAlert(e)
+    sendNtfyAlert(e)
 
 existing_classes = []
 featured_classes = []

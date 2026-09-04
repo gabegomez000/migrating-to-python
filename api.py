@@ -9,6 +9,8 @@ from config_loader import load_config
 from redoSingleModule import redoSingleModule
 from newClassSingleModule import newClassSingle
 from newMeetSingleModule import newMeetSingle
+from redoMeetSingleModule import redoMeetSingle
+
 
 config = load_config()
 
@@ -110,6 +112,20 @@ def newMeeting(guid):
     try:
         response = newMeetSingle(guid, True)
         response2 = newMeetSingle(guid, False)
+        response = f"{response} {response2}"
+        return {"message": response}
+    except Exception as e:
+        return {"message": f"An error occurred: {str(e)}"}, 500
+
+@app.route('/api/redo/meeting/<guid>', methods=['POST'])
+def redoMeeting(guid):
+    err = _validate_guid(guid)
+    if err:
+        return err
+
+    try:
+        response = redoMeetSingle(guid, True)
+        response2 = redoMeetSingle(guid, False)
         response = f"{response} {response2}"
         return {"message": response}
     except Exception as e:

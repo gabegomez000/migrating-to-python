@@ -29,19 +29,19 @@ _CLASS_REGISTRATION_BASE = (
 )
 
 _RWORLD_CLASS_REGISTRATION_BASE = (
-    "https://miamiportal.ramcoams.net/Login.aspx"
-    "?ReturnUrl=%2fEducation%2fRegistration%2fDetails.aspx%3fcid%3d"
+    "https://beachesmls.mysolidearth.com/saml/auth"
+    "?init=1&provider=https://miamiportal.ramcoams.net/&RelayState=/Education/Registration/Details.aspx?cid="
 )
 
 
 _MEETING_REGISTRATION_BASE = (
     "https://miamiportal.ramcoams.net/Authentication/DefaultSingleSignon.aspx"
-    "?ReturnUrl=%2FEducation%2FRegistration%2FMeetingDetails.aspx%3Fmid%3D"
+    "?ReturnUrl=%2FMeetings%2FRegistration%2FMeetingDetails.aspx%3Fmid%3D"
 )
 
 _RWORLD_MEETING_REGISTRATION_BASE = (
-    "https://miamiportal.ramcoams.net/Login.aspx"
-    "?ReturnUrl=%2fEducation%2fRegistration%2fMeetingDetails.aspx%3fmid%3d"
+    "https://beachesmls.mysolidearth.com/saml/auth"
+    "?init=1&provider=https://miamiportal.ramcoams.net/&RelayState=/Meetings/Registration/MeetingDetails.aspx?mid="
 )
 
 _BUTTON_STYLE = (
@@ -277,8 +277,8 @@ def process_meeting(obj, prices, tag_search, cat_search, venue_search):
     else:
         reg_url = _MEETING_REGISTRATION_BASE + obj['cobalt_meetingId']
         rworld_url = _RWORLD_MEETING_REGISTRATION_BASE + obj['cobalt_meetingId']
-    obj['cobalt_Description'] = (obj.get('cobalt_Description') or '') + _register_button(reg_url, _BUTTON_STYLE, button_text="MIAMI Register Now")
-    obj['cobalt_Description'] += _register_button(rworld_url, _RWORLD_BUTTON_STYLE, button_text="R-World Register Now")
+    obj['ramco_description'] = (obj.get('ramco_description') or '') + _register_button(reg_url, _BUTTON_STYLE, button_text="MIAMI Register Now")
+    obj['ramco_description'] += _register_button(rworld_url, _RWORLD_BUTTON_STYLE, button_text="R-World Register Now")
 
     print(
         f"Meeting processed: {obj['cobalt_name']} - {obj['cobalt_meetingId']} - "

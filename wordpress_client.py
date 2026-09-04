@@ -107,7 +107,7 @@ def build_meeting_payload(data, featured_image=None):
         'title': data['cobalt_name'],
         'status': 'publish',
         'hide_from_listings': data['publish'],
-        'description': data['cobalt_Description'],
+        'description': data['ramco_description'],
         'all_day': data['all_day'],
         'start_date': data['cobalt_BeginDate']['Display'],
         'end_date': data['cobalt_EndDate']['Display'],

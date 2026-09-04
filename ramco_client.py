@@ -16,7 +16,7 @@ CLASS_ATTRIBUTES = (
 
 MEETING_ATTRIBUTES = (
     'cobalt_BeginDate,cobalt_EndDate,cobalt_meetingId,cobalt_location,'
-    'cobalt_name,cobalt_description,'
+    'cobalt_name,ramco_description,'
     'cobalt_cobalt_tag_cobalt_meeting/cobalt_name,cobalt_fullday,cobalt_publishtoportal,'
     'statuscode,'
     'cobalt_meeting_cobalt_meetingregistrationfees/cobalt_productid,'
