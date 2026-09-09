@@ -51,21 +51,27 @@ print(f"New Classes: {len(new_classes)}")
 async def submit_new_class(data):
     if check_event_exists(config, data['cobalt_classId']):
         print(f"Skipping (already exists): {data['cobalt_name']} - {data['cobalt_classId']}")
-        return
+        return False
     print(f"Submitting new class: {data['cobalt_classId']} - {data['cobalt_name']}")
     payload = build_class_payload(data)
     response = submit_event_create(config, payload)
     if response.status_code == 201:
         print(f"Class processed: {data['cobalt_name']}")
+        return True
     else:
         msg = f"Error submitting class: {data['cobalt_name']} - {response.text} - {response.status_code}"
         print(msg)
         sendNtfyAlert(msg, title="NewClassRedo: Error submitting class")
+        return False
 
 
 async def submit_all():
+    submitted = 0
     for obj in new_classes:
-        await submit_new_class(obj)
+        if await submit_new_class(obj):
+            submitted += 1
+    # summary count of successful submissions, distinct from skipped/failed
+    print(f"Submitted {submitted} of {len(new_classes)} new classes")
 
 
 asyncio.run(submit_all())

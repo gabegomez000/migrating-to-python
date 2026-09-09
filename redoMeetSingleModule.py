@@ -23,13 +23,15 @@ def redoMeetSingle(guid, staging):
     try:
         data = fetch_entity(config, 'cobalt_meeting', guid, MEETING_ATTRIBUTES)
     except Exception as e:
+        sendNtfyAlert(str(e), title="RedoMeetSingleModule: Error fetching meeting")
+        print(f"Error fetching meeting: {e}")
         return e
 
     try:
         process_meeting(data, prices, tag_search, cat_search, venue_search)
     except Exception as e:
         sendNtfyAlert(str(e), title="RedoMeetSingleModule: Error processing meeting")
-        print(f"Error: {e}")
+        print(f"Error processing meeting: {e}")
         return e
 
     new_meetings = []
@@ -58,18 +60,25 @@ def redoMeetSingle(guid, staging):
         check_if_exists(data)
     except Exception as e:
         sendNtfyAlert(str(e), title="RedoMeetSingleModule: Error checking if meeting exists")
-        print(f"Error: {e}")
+        print(f"Error checking meeting existence: {e}")
         return e
 
     if new_meetings:
         print(f"Meeting {data['cobalt_name']} - {data['cobalt_meetingId']} does not exist in WordPress. Please use newMeetSingleModule to create it.")
 
     try:
-        obj = existing_meetings[0]
-        print(f"Submitting existing meeting: {obj['cobalt_name']} - {obj['cobalt_meetingId']}")
-        payload = build_meeting_payload(obj)
-        slug = obj['cobalt_meetingId']
-        response = submit_event_update(config, slug, payload)
+        if existing_meetings:
+            obj = existing_meetings[0]
+            print(f"Submitting existing meeting: {obj['cobalt_name']} - {obj['cobalt_meetingId']}")
+            payload = build_meeting_payload(obj)
+            slug = obj['cobalt_meetingId']
+            response = submit_event_update(config, slug, payload)
+        elif featured_meetings:
+            obj = featured_meetings[0]
+            print(f"Submitting featured meeting: {obj['cobalt_name']} - {obj['cobalt_meetingId']}")
+            payload = build_meeting_payload(obj)
+            slug = obj['cobalt_meetingId']
+            response = submit_event_update(config, slug, payload)
 
         if response.status_code == 201:
             print(f"Meeting processed: {obj['cobalt_name']}")
@@ -81,5 +90,5 @@ def redoMeetSingle(guid, staging):
             return msg
     except Exception as e:
         sendNtfyAlert(str(e), title="RedoMeetSingleModule: Error submitting meeting")
-        print(f"Error: {e}")
+        print(f"Error submitting meeting: {e}")
         return e
