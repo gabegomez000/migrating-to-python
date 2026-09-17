@@ -33,6 +33,11 @@ _RWORLD_CLASS_REGISTRATION_BASE = (
     "?init=1&provider=https://miamiportal.ramcoams.net/&RelayState=/Education/Registration/Details.aspx?cid="
 )
 
+_NONMEMBER_CLASS_REGISTRATION_BASE = (
+    "https://miamiportal.ramcoams.net/Login.aspx"
+    "?ReturnUrl=%2FEducation%2FRegistration%2FDetails.aspx%3Fcid%3D"
+)
+
 
 _MEETING_REGISTRATION_BASE = (
     "https://miamiportal.ramcoams.net/Authentication/DefaultSingleSignon.aspx"
@@ -44,6 +49,11 @@ _RWORLD_MEETING_REGISTRATION_BASE = (
     "?init=1&provider=https://miamiportal.ramcoams.net/&RelayState=/Meetings/Registration/MeetingDetails.aspx?mid="
 )
 
+_NONMEMBER_MEETING_REGISTRATION_BASE = (
+    "https://miamiportal.ramcoams.net/Login.aspx"
+    "?ReturnUrl=%2FMeetings%2FRegistration%2FMeetingDetails.aspx%3Fmid%3D"
+)
+
 _BUTTON_STYLE = (
     "background-color: #4CAF50;border: none;color: white;padding: 15px 32px; margin-top: 10px;"
     "text-align: center;text-decoration: none;display: inline-block;font-size: 16px;"
@@ -51,6 +61,11 @@ _BUTTON_STYLE = (
 
 _RWORLD_BUTTON_STYLE = (
     "background-color: #31C4B8;border: none;color: white;padding: 15px 32px; margin-top: 10px;"
+    "text-align: center;text-decoration: none;display: inline-block;font-size: 16px;"
+)
+
+_NONMEMBER_BUTTON_STYLE = (
+    "background-color: #113257;border: none;color: white;padding: 15px 32px; margin-top: 10px;"
     "text-align: center;text-decoration: none;display: inline-block;font-size: 16px;"
 )
 
@@ -196,11 +211,14 @@ def process_class(obj, prices, tag_search, cat_search, venue_search):
     if obj.get('cobalt_OutsideProvider') == 'true':
         reg_url = obj.get('cobalt_OutsideProviderLink', '')
         rworld_url = obj.get('cobalt_OutsideProviderLink', '')
+        nonmem_url = obj.get('cobalt_OutsideProviderLink', '')
     else:
         reg_url = _CLASS_REGISTRATION_BASE + obj['cobalt_classId']
         rworld_url = _RWORLD_CLASS_REGISTRATION_BASE + obj['cobalt_classId']
+        nonmem_url = _NONMEMBER_CLASS_REGISTRATION_BASE + obj['cobalt_classId']
     obj['cobalt_Description'] = (obj.get('cobalt_Description') or '') + _register_button(reg_url, _BUTTON_STYLE, button_text="MIAMI Register Now")
     obj['cobalt_Description'] += _register_button(rworld_url, _RWORLD_BUTTON_STYLE, button_text="R-World Register Now")
+    obj['cobalt_Description'] += _register_button(nonmem_url, _NONMEMBER_BUTTON_STYLE, button_text="Non-Member Register Now")
 
     # Description — instructor prefix
     instructors = obj.get('cobalt_cobalt_classinstructor_cobalt_class', [])
@@ -274,11 +292,14 @@ def process_meeting(obj, prices, tag_search, cat_search, venue_search):
     if obj.get('cobalt_OutsideProvider') == 'true':
         reg_url = obj.get('cobalt_OutsideProviderLink', '')
         rworld_url = obj.get('cobalt_OutsideProviderLink', '')
+        nonmem_url = obj.get('cobalt_OutsideProviderLink', '')
     else:
         reg_url = _MEETING_REGISTRATION_BASE + obj['cobalt_meetingId']
         rworld_url = _RWORLD_MEETING_REGISTRATION_BASE + obj['cobalt_meetingId']
+        nonmem_url = _NONMEMBER_MEETING_REGISTRATION_BASE + obj['cobalt_meetingId']
     obj['ramco_description'] = (obj.get('ramco_description') or '') + _register_button(reg_url, _BUTTON_STYLE, button_text="MIAMI Register Now")
     obj['ramco_description'] += _register_button(rworld_url, _RWORLD_BUTTON_STYLE, button_text="R-World Register Now")
+    obj['ramco_description'] += _register_button(nonmem_url, _NONMEMBER_BUTTON_STYLE, button_text="Non-Member Register Now")
 
     print(
         f"Meeting processed: {obj['cobalt_name']} - {obj['cobalt_meetingId']} - "

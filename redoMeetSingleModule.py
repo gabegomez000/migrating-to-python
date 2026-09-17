@@ -76,7 +76,7 @@ def redoMeetSingle(guid, staging):
         elif featured_meetings:
             obj = featured_meetings[0]
             print(f"Submitting featured meeting: {obj['cobalt_name']} - {obj['cobalt_meetingId']}")
-            payload = build_meeting_payload(obj)
+            payload = build_meeting_payload(obj, featured_image=obj['featuredImage'])
             slug = obj['cobalt_meetingId']
             response = submit_event_update(config, slug, payload)
 

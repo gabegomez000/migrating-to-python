@@ -70,6 +70,8 @@ def fetch_entities(config, entity, filter_str, attributes):
         'Attributes': attributes,
     }
     try:
+        print(config['API_URL'])
+        print(payload)
         r = requests.post(config['API_URL'], data=payload)
         data = json.loads(r.text)
         return data.get('Data', [])

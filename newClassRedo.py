@@ -15,14 +15,15 @@ setup_logging('logs/newClasses.log')
 
 config = load_config()
 
-pricelist()
-getTags(config['WORDPRESS_URL'])
-getCategories(config['WORDPRESS_URL'])
-getVenues(config['WORDPRESS_URL'])
+# pricelist()
+# getTags(config['WORDPRESS_URL'])
+# getCategories(config['WORDPRESS_URL'])
+# getVenues(config['WORDPRESS_URL'])
 
 date_start = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%dT%H:00:00")
 
 try:
+    print(date_start)
     classes = fetch_entities(
         config, 'cobalt_class',
         f'cobalt_classbegindate<ge>{date_start}',
