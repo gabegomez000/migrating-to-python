@@ -87,7 +87,7 @@ def build_class_payload(data, featured_image=None):
         'sticky': data.get('sticky'),
     }
     if data['cobalt_LocationId']:
-        payload['venue'] = data['cobalt_LocationId']
+        payload['venue'] = data['cobalt_LocationId'][0]
     if featured_image:
         payload['image'] = featured_image
     return payload
