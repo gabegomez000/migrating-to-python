@@ -115,7 +115,7 @@ def build_meeting_payload(data, featured_image=None):
         'categories': data['categories'],
         'show_map_link': True,
         'show_map': True,
-        'cost': data['cobalt_price'],
+        'cost': '',
         'tags': data['cobalt_cobalt_tag_cobalt_meeting'],
         'featured': data.get('featured'),
         'sticky': data.get('sticky'),
