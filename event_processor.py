@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 # Order IDs that should always be excluded from price lookups
 _EXCLUDED_ORDER_IDS = {
@@ -77,7 +78,7 @@ def _register_button(url, style, button_text="Register Now"):
     )
 
 
-def _resolve_price(fees, prices):
+def _resolve_price(fees, prices, logger):
     """Return a formatted price string from a list of registration fee items."""
     order_ids = [
         {'id': item['cobalt_productid']['Value'], 'status': item['statuscode']['Value']}
@@ -92,7 +93,7 @@ def _resolve_price(fees, prices):
         return '0.00'
 
     match = [item for item in prices if item['ProductId'] == order_ids[0]['id']]
-    print(f"Cost: {match}")
+    logger.debug("Resolved registration price match: %s", match)
     if not match or match[0]['Price'] is None:
         return ''
 
@@ -105,7 +106,7 @@ def _resolve_price(fees, prices):
     return price
 
 
-def _resolve_tags_and_categories(raw_tags, tag_search, cat_search, name, entity_id):
+def _resolve_tags_and_categories(raw_tags, tag_search, cat_search, name, entity_id, logger):
     """Look up WordPress tag/category IDs for the given RAMCO tag names."""
     tags = []
     categories = []
@@ -114,25 +115,34 @@ def _resolve_tags_and_categories(raw_tags, tag_search, cat_search, name, entity_
         if result_tag:
             tags.append(result_tag[0])
         else:
-            print(f"Tag not found in wordpress for ***{name}*** with id ***{entity_id}*** : {item['cobalt_name']}")
+            logger.warning(
+                "Tag not found in WordPress for %s (id %s): %s",
+                name, entity_id, item['cobalt_name'],
+            )
 
         result_cat = [c['id'] for c in cat_search if c['name'] == item['cobalt_name']]
         if result_cat:
             categories.append(result_cat[0])
         else:
-            print(f"Category not found in wordpress for ***{name}*** with id ***{entity_id}*** : {item['cobalt_name']}")
+            logger.warning(
+                "Category not found in WordPress for %s (id %s): %s",
+                name, entity_id, item['cobalt_name'],
+            )
 
     return tags, categories
 
 
-def _resolve_venue(location_display, venue_search, name, entity_id):
+def _resolve_venue(location_display, venue_search, name, entity_id, logger):
     """Return a list containing the matching WordPress venue ID, or []."""
     result = [v['id'] for v in venue_search if v['name'] == location_display]
     if result:
         return result
     if not location_display or location_display in ('null', ''):
         return []
-    print(f"Venue not found in wordpress for ***{name}*** with id ***{entity_id}*** : {location_display}")
+    logger.warning(
+        "Venue not found in WordPress for %s (id %s): %s",
+        name, entity_id, location_display,
+    )
     return []
 
 
@@ -151,12 +161,14 @@ def _apply_location_color(obj, location_ids):
         obj['cobalt_name'] = f'<span style="color:{color};">{obj["cobalt_name"]}</span>'
 
 
-def process_class(obj, prices, tag_search, cat_search, venue_search):
+def process_class(obj, prices, tag_search, cat_search, venue_search, logger=None):
     """Process and enrich a raw RAMCO class object in-place.
 
     Mutates obj to add/normalise: dates, price, tags, categories, publish flag,
     all_day flag, venue ID, color, and description (register button + instructor).
     """
+    logger = logger or logging.getLogger(__name__)
+
     # Dates
     obj['cobalt_ClassBeginDate']['Display'] = datetime.datetime.fromtimestamp(
         obj['cobalt_ClassBeginDate']['Value']
@@ -167,16 +179,16 @@ def process_class(obj, prices, tag_search, cat_search, venue_search):
 
     # Price
     fees = obj.get('cobalt_cobalt_class_cobalt_classregistrationfee', [])
-    obj['cobalt_price'] = _resolve_price(fees, prices)
+    obj['cobalt_price'] = _resolve_price(fees, prices, logger)
     if obj.get('cobalt_OutsideProvider') == 'true':
         obj['cobalt_price'] = ''
-    print(f"Price: {obj['cobalt_price']}")
+    logger.debug("Class price: %s", obj['cobalt_price'])
 
     # Tags and categories
     raw_tags = obj.get('cobalt_cobalt_tag_cobalt_class', [])
     if raw_tags:
         tags, categories = _resolve_tags_and_categories(
-            raw_tags, tag_search, cat_search, obj['cobalt_name'], obj['cobalt_classId']
+            raw_tags, tag_search, cat_search, obj['cobalt_name'], obj['cobalt_classId'], logger
         )
     else:
         tags, categories = [1660], []
@@ -199,13 +211,13 @@ def process_class(obj, prices, tag_search, cat_search, venue_search):
     location_id_field = obj.get('cobalt_LocationId')
     location_display = location_id_field['Display'] if isinstance(location_id_field, dict) else ''
     obj['cobalt_LocationId'] = _resolve_venue(
-        location_display, venue_search, obj['cobalt_name'], obj['cobalt_classId']
+        location_display, venue_search, obj['cobalt_name'], obj['cobalt_classId'], logger
     )
-    print(obj['cobalt_LocationId'])
+    logger.debug("Resolved class venue IDs: %s", obj['cobalt_LocationId'])
 
     # Color
     _apply_location_color(obj, obj['cobalt_LocationId'])
-    print(f"Color: {obj.get('color', 'No color set')}")
+    logger.debug("Class color: %s", obj.get('color', 'No color set'))
 
     # Description — register button
     if obj.get('cobalt_OutsideProvider') == 'true':
@@ -229,20 +241,22 @@ def process_class(obj, prices, tag_search, cat_search, venue_search):
             f'<br><br>{obj["cobalt_Description"]}'
         )
 
-    print(
-        f"Class processed: {obj['cobalt_name']} - {obj['cobalt_classId']} - "
-        f"{obj['cobalt_LocationId']} - {obj['cobalt_price']} - "
-        f"{obj['cobalt_cobalt_tag_cobalt_class']}"
+    logger.info(
+        "Class processed: %s - %s - venue %s - price %s - tags %s",
+        obj['cobalt_name'], obj['cobalt_classId'], obj['cobalt_LocationId'],
+        obj['cobalt_price'], obj['cobalt_cobalt_tag_cobalt_class'],
     )
     return obj
 
 
-def process_meeting(obj, prices, tag_search, cat_search, venue_search):
+def process_meeting(obj, prices, tag_search, cat_search, venue_search, logger=None):
     """Process and enrich a raw RAMCO meeting object in-place.
 
     Mutates obj to add/normalise: dates, price, tags, categories, publish flag,
     all_day flag, venue ID, and description (register button).
     """
+    logger = logger or logging.getLogger(__name__)
+
     # Dates
     obj['cobalt_BeginDate']['Display'] = datetime.datetime.fromtimestamp(
         obj['cobalt_BeginDate']['Value']
@@ -253,16 +267,16 @@ def process_meeting(obj, prices, tag_search, cat_search, venue_search):
 
     # Price
     fees = obj.get('cobalt_Meeting_Cobalt_MeetingRegistrationFees', [])
-    obj['cobalt_price'] = _resolve_price(fees, prices)
+    obj['cobalt_price'] = _resolve_price(fees, prices, logger)
     if obj.get('cobalt_OutsideProvider') == 'true':
         obj['cobalt_price'] = ''
-    print(f"Price: {obj['cobalt_price']}")
+    logger.debug("Meeting price: %s", obj['cobalt_price'])
 
     # Tags and categories
     raw_tags = obj.get('cobalt_cobalt_tag_cobalt_meeting', [])
     if raw_tags:
         tags, categories = _resolve_tags_and_categories(
-            raw_tags, tag_search, cat_search, obj['cobalt_name'], obj['cobalt_meetingId']
+            raw_tags, tag_search, cat_search, obj['cobalt_name'], obj['cobalt_meetingId'], logger
         )
     else:
         tags, categories = [1660], []
@@ -285,7 +299,7 @@ def process_meeting(obj, prices, tag_search, cat_search, venue_search):
     # Venue (meetings store location as a plain string, not a nested dict)
     location_display = obj.get('cobalt_Location', '')
     obj['cobalt_Location'] = _resolve_venue(
-        location_display, venue_search, obj['cobalt_name'], obj['cobalt_meetingId']
+        location_display, venue_search, obj['cobalt_name'], obj['cobalt_meetingId'], logger
     )
 
     # Description — register button
@@ -301,9 +315,9 @@ def process_meeting(obj, prices, tag_search, cat_search, venue_search):
     obj['ramco_description'] += _register_button(rworld_url, _RWORLD_BUTTON_STYLE, button_text="R-World Register Now")
     obj['ramco_description'] += _register_button(nonmem_url, _NONMEMBER_BUTTON_STYLE, button_text="Non-Member Register Now")
 
-    print(
-        f"Meeting processed: {obj['cobalt_name']} - {obj['cobalt_meetingId']} - "
-        f"{obj['cobalt_Location']} - {obj['cobalt_price']} - "
-        f"{obj['cobalt_cobalt_tag_cobalt_meeting']}"
+    logger.info(
+        "Meeting processed: %s - %s - venue %s - price %s - tags %s",
+        obj['cobalt_name'], obj['cobalt_meetingId'], obj['cobalt_Location'],
+        obj['cobalt_price'], obj['cobalt_cobalt_tag_cobalt_meeting'],
     )
     return obj

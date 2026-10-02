@@ -1,21 +1,27 @@
 import base64
 import json
+import logging
 import requests
 from urllib.parse import urlencode
 
 from alerts import sendNtfyAlert
 
 
-def load_reference_data():
+def load_reference_data(logger=None):
     """Load the four local JSON reference files.
 
     Returns:
         (prices, tag_search, cat_search, venue_search) tuple of lists.
     """
+    logger = logger or logging.getLogger(__name__)
     prices = json.load(open('./pricelist.json', 'r'))
     tag_search = json.load(open('./tags.json', 'r'))
     cat_search = json.load(open('./categories.json', 'r'))
     venue_search = json.load(open('./venues.json', 'r'))
+    logger.debug(
+        "Loaded WordPress reference data: %d prices, %d tags, %d categories, %d venues",
+        len(prices), len(tag_search), len(cat_search), len(venue_search),
+    )
     return prices, tag_search, cat_search, venue_search
 
 
@@ -29,13 +35,21 @@ def get_wp_headers(config, content_type='application/x-www-form-urlencoded'):
     }
 
 
-def check_event_exists(config, slug):
+def check_event_exists(config, slug, logger=None):
     """Check whether a WordPress event exists by slug.
 
     Returns:
         The parsed JSON response dict if the event exists (HTTP 200), else None.
     """
-    response = requests.get(f"{config['WORDPRESS_URL']}/events/by-slug/{slug}")
+    logger = logger or logging.getLogger(__name__)
+    url = f"{config['WORDPRESS_URL']}/events/by-slug/{slug}"
+    try:
+        response = requests.get(url)
+    except Exception:
+        logger.exception("WordPress event lookup failed for slug %s", slug)
+        raise
+
+    logger.debug("WordPress event lookup for slug %s returned HTTP %s", slug, response.status_code)
     if response.status_code == 200 and response.text:
         return response.json()
     return None
@@ -127,7 +141,7 @@ def build_meeting_payload(data, featured_image=None):
     return payload
 
 
-def submit_event_update(config, slug, payload):
+def submit_event_update(config, slug, payload, logger=None):
     """POST an event update to the WordPress by-slug endpoint.
 
     Uses query params for non-image updates and URL-encoded body for image updates
@@ -136,23 +150,44 @@ def submit_event_update(config, slug, payload):
     Returns:
         The requests.Response object.
     """
+    logger = logger or logging.getLogger(__name__)
     url = f"{config['WORDPRESS_URL']}/events/by-slug/{slug}"
     headers = get_wp_headers(config)
 
-    if payload.get('image'):
-        response = requests.post(url, headers=headers, data=urlencode(payload))
+    try:
+        if payload.get('image'):
+            response = requests.post(url, headers=headers, data=urlencode(payload))
+        else:
+            response = requests.post(url, headers=headers, params=payload)
+    except Exception:
+        logger.exception("WordPress event update failed for slug %s", slug)
+        raise
+
+    if response.status_code >= 400:
+        logger.error("WordPress event update for slug %s returned HTTP %s", slug, response.status_code)
     else:
-        response = requests.post(url, headers=headers, params=payload)
+        logger.info("WordPress event updated for slug %s (HTTP %s)", slug, response.status_code)
     return response
 
 
-def submit_event_create(config, payload):
+def submit_event_create(config, payload, logger=None):
     """POST a new event to the WordPress events endpoint.
 
     Returns:
         The requests.Response object.
     """
+    logger = logger or logging.getLogger(__name__)
     url = f"{config['WORDPRESS_URL']}/events"
     headers = get_wp_headers(config, content_type='application/json')
-    response = requests.post(url, headers=headers, params=payload)
+    slug = payload.get('slug', '<unknown>')
+    try:
+        response = requests.post(url, headers=headers, params=payload)
+    except Exception:
+        logger.exception("WordPress event creation failed for slug %s", slug)
+        raise
+
+    if response.status_code >= 400:
+        logger.error("WordPress event creation for slug %s returned HTTP %s", slug, response.status_code)
+    else:
+        logger.info("WordPress event created for slug %s (HTTP %s)", slug, response.status_code)
     return response

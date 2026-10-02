@@ -1,4 +1,5 @@
 import json
+import logging
 import requests
 from alerts import sendNtfyAlert
 
@@ -27,7 +28,7 @@ MEETING_ATTRIBUTES = (
 )
 
 
-def fetch_entity(config, entity, guid, attributes):
+def fetch_entity(config, entity, guid, attributes, logger=None):
     """Fetch a single entity from the RAMCO API (GetEntity).
 
     Returns:
@@ -36,6 +37,7 @@ def fetch_entity(config, entity, guid, attributes):
     Raises:
         Exception: Re-raises after sending a Discord alert.
     """
+    logger = logger or logging.getLogger(__name__)
     payload = {
         'Key': config['API_KEY'],
         'Operation': 'GetEntity',
@@ -44,16 +46,17 @@ def fetch_entity(config, entity, guid, attributes):
         'Attributes': attributes,
     }
     try:
+        logger.info("Fetching RAMCO entity %s with id %s", entity, guid)
         r = requests.post(config['API_URL'], data=payload)
         data = json.loads(r.text)
         return data['Data']
     except Exception as e:
         sendNtfyAlert(str(e), title="RAMCO API: Error fetching entity")
-        print(f"Error [RAMCO API]: {e}")
+        logger.exception("Error fetching RAMCO entity %s with id %s", entity, guid)
         raise
 
 
-def fetch_entities(config, entity, filter_str, attributes):
+def fetch_entities(config, entity, filter_str, attributes, logger=None):
     """Fetch multiple entities from the RAMCO API (GetEntities).
 
     Returns:
@@ -62,6 +65,7 @@ def fetch_entities(config, entity, filter_str, attributes):
     Raises:
         Exception: Re-raises after sending a Discord alert.
     """
+    logger = logger or logging.getLogger(__name__)
     payload = {
         'Key': config['API_KEY'],
         'Operation': 'GetEntities',
@@ -70,12 +74,11 @@ def fetch_entities(config, entity, filter_str, attributes):
         'Attributes': attributes,
     }
     try:
-        print(config['API_URL'])
-        print(payload)
+        logger.info("Fetching RAMCO entities for %s with filter %s", entity, filter_str)
         r = requests.post(config['API_URL'], data=payload)
         data = json.loads(r.text)
         return data.get('Data', [])
     except Exception as e:
         sendNtfyAlert(str(e), title="RAMCO API: Error fetching entities")
-        print(f"Error [RAMCO API]: {e}")
+        logger.exception("Error fetching RAMCO entities for %s", entity)
         raise

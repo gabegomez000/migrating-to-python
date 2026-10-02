@@ -10,10 +10,16 @@ from wordpress_client import (
     load_reference_data, check_event_exists, merge_wp_tags_and_categories,
     build_class_payload, submit_event_update,
 )
+from classsync_logger import get_logger
+
+logger = get_logger("incremental_classes")
 
 
 def incremental():
     config = load_config()
+
+    logger.info("Starting incremental class sync")
+    logger.info("Refreshing WordPress reference data")
 
     pricelist()
     getTags(config['WORDPRESS_URL'])
@@ -23,24 +29,27 @@ def incremental():
     date_start = (datetime.datetime.now() - datetime.timedelta(hours=1)).strftime("%Y-%m-%dT%H:00:00")
 
     try:
-        classes = fetch_entities(config, 'cobalt_class', f'modifiedon<ge>{date_start}', CLASS_ATTRIBUTES)
+        classes = fetch_entities(
+            config, 'cobalt_class', f'modifiedon<ge>{date_start}', CLASS_ATTRIBUTES,
+            logger=logger,
+        )
     except Exception as e:
-        print(e)
+        logger.exception("Error fetching modified classes")
         sendNtfyAlert(str(e), title="Incremental: Error fetching classes")
         return
 
     if not classes:
-        print("No new classes to process")
+        logger.info("No classes to process")
         return
 
-    prices, tag_search, cat_search, venue_search = load_reference_data()
+    prices, tag_search, cat_search, venue_search = load_reference_data(logger=logger)
 
     try:
         for obj in classes:
-            print(f"Processing: {obj['cobalt_name']} - {obj['cobalt_classId']}")
-            process_class(obj, prices, tag_search, cat_search, venue_search)
+            logger.info("Processing class: %s - %s", obj['cobalt_name'], obj['cobalt_classId'])
+            process_class(obj, prices, tag_search, cat_search, venue_search, logger=logger)
     except Exception as e:
-        print(e)
+        logger.exception("Error processing classes")
         sendNtfyAlert(str(e), title="Incremental: Error processing classes")
 
     existing_classes = []
@@ -51,48 +60,48 @@ def incremental():
     def check_if_exists(classes):
         for obj in classes:
             if obj['ramcosub_calendar_override'] == 'false':
-                print(f"Checking {obj['cobalt_name']} - {obj['cobalt_classId']}")
-                wp_response = check_event_exists(config, obj['cobalt_classId'])
+                logger.info("Checking class: %s - %s", obj['cobalt_name'], obj['cobalt_classId'])
+                wp_response = check_event_exists(config, obj['cobalt_classId'], logger=logger)
 
                 if wp_response is not None:
                     merge_wp_tags_and_categories(
                         obj, wp_response, 'cobalt_cobalt_tag_cobalt_class', 'categories'
                     )
                     if wp_response.get('image') is False:
-                        print("No class image!")
+                        logger.info("No class image for %s", obj['cobalt_classId'])
                         existing_classes.append(obj)
                     else:
                         obj['featuredImage'] = wp_response['image']['url']
-                        print(wp_response['image']['url'])
+                        logger.info("Found class image: %s", wp_response['image']['url'])
                         featured_classes.append(obj)
                 else:
                     new_classes.append(obj)
             else:
-                print(f"Sending {obj['cobalt_name']} - {obj['cobalt_classId']} to the shadowrealm")
+                logger.info("Skipping overridden class: %s - %s", obj['cobalt_name'], obj['cobalt_classId'])
                 class_shadowrealm.append(obj)
 
     try:
         check_if_exists(classes)
     except Exception as e:
+        logger.exception("Error checking whether classes exist")
         sendNtfyAlert(str(e), title="Incremental: Error checking if class exists")
-        print(e)
 
-    print(f"Existing Classes: {len(existing_classes)}")
-    print(f"Featured Classes: {len(featured_classes)}")
-    print(f"New Classes: {len(new_classes)}")
-    print(f"Shadowrealm Classes: {len(class_shadowrealm)}")
+    logger.info("Existing classes: %d", len(existing_classes))
+    logger.info("Featured classes: %d", len(featured_classes))
+    logger.info("New classes: %d", len(new_classes))
+    logger.info("Overridden classes skipped: %d", len(class_shadowrealm))
 
     async def submit_existing_class(data):
-        print(f"Submitting existing class: {data['cobalt_classId']} - {data['cobalt_name']}")
+        logger.info("Updating existing class: %s - %s", data['cobalt_classId'], data['cobalt_name'])
         payload = build_class_payload(data)
-        submit_event_update(config, data['cobalt_classId'], payload)
-        print(f"Class processed: {data['cobalt_name']}")
+        submit_event_update(config, data['cobalt_classId'], payload, logger=logger)
+        logger.info("Class updated: %s", data['cobalt_name'])
 
     async def submit_featured_class(data):
-        print(f"Submitting featured class: {data['cobalt_classId']}")
+        logger.info("Updating featured class: %s", data['cobalt_classId'])
         payload = build_class_payload(data, featured_image=data['featuredImage'])
-        submit_event_update(config, data['cobalt_classId'], payload)
-        print(f"Featured class processed: {data['cobalt_name']}")
+        submit_event_update(config, data['cobalt_classId'], payload, logger=logger)
+        logger.info("Featured class updated: %s", data['cobalt_name'])
 
     async def submit_all(items, submit_fn):
         for obj in items:
@@ -105,5 +114,5 @@ def incremental():
 try:
     incremental()
 except Exception as e:
+    logger.exception("Incremental class sync failed")
     sendNtfyAlert(str(e), title="Incremental: Unhandled Error")
-    print(e)
